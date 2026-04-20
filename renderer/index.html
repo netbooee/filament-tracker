@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filament Vault</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F7F8FA; --surface:#FFFFFF; --surface2:#F2F3F6; --surface3:#EAECF0;
+    --border:#E4E6EB; --border2:#CDD0D8;
+    --text:#111318; --text2:#5A6070; --text3:#9098AA; --ink:#1D2130;
+    --teal:#0E7C6B; --teal-mid:#12A68E; --teal-light:#E6F4F1; --teal-border:#B2DDD7;
+    --red:#C0392B; --red-light:#FDECEA; --red-border:#F5C0BB;
+    --amber:#A05C00; --amber-light:#FEF3E2; --amber-border:#F5D99A;
+    --violet:#5B21B6; --violet-light:#EDE9FE; --violet-border:#C4B5FD;
+    --orange:#C2410C; --orange-light:#FFF7ED; --orange-border:#FED7AA;
+    --shadow-sm:0 1px 3px rgba(17,19,24,0.06),0 1px 2px rgba(17,19,24,0.04);
+    --shadow-md:0 4px 12px rgba(17,19,24,0.08),0 2px 4px rgba(17,19,24,0.05);
+    --shadow-lg:0 16px 48px rgba(17,19,24,0.12),0 4px 12px rgba(17,19,24,0.06);
+    --radius:10px; --radius-lg:14px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Figtree',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:13px;-webkit-font-smoothing:antialiased;}
+  ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;} ::-webkit-scrollbar-thumb:hover{background:var(--border2);}
+  .app{display:flex;flex-direction:column;height:100vh;} .body{display:flex;flex:1;overflow:hidden;}
+
+  /* TITLEBAR */
+  .titlebar{height:46px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px 0 80px;-webkit-app-region:drag;flex-shrink:0;}
+  .tb-brand{display:flex;align-items:center;gap:9px;-webkit-app-region:no-drag;}
+  .tb-icon{width:28px;height:28px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tb-icon svg{width:16px;height:16px;}
+  .tb-wordmark{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
+  .tb-wordmark span{color:var(--teal-mid);}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag;}
+  .tb-stat{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);}
+  .tb-dot{width:6px;height:6px;border-radius:50%;background:var(--teal-mid);flex-shrink:0;}
+
+  /* SIDEBAR */
+  .sidebar{width:216px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 10px 16px;flex-shrink:0;}
+  .nav-section{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:0 10px;margin:18px 0 5px;}
+  .nav-section:first-child{margin-top:0;}
+  .nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:1px solid transparent;background:transparent;font-family:'Figtree',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;width:100%;text-align:left;transition:all 0.13s ease;}
+  .nav-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;flex-shrink:0;}
+  .nav-btn:hover{background:var(--surface2);color:var(--text);}
+  .nav-btn.active{background:var(--teal-light);color:var(--teal);border-color:var(--teal-border);font-weight:600;}
+  .nav-badge{margin-left:auto;border-radius:10px;padding:1px 7px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;display:none;}
+  .nav-badge.red{background:var(--red);color:white;display:inline;}
+  .nav-badge.amber{background:var(--amber);color:white;display:inline;}
+  .sidebar-foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid var(--border);}
+  .save-row{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);}
+  .save-pip{width:6px;height:6px;border-radius:50%;background:var(--teal-mid);flex-shrink:0;transition:background 0.2s;}
+  .save-pip.saving{background:var(--amber);animation:pip 0.8s infinite;}
+  @keyframes pip{0%,100%{opacity:1}50%{opacity:0.3}}
+  .data-path{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);margin-top:5px;word-break:break-all;line-height:1.5;}
+
+  /* MAIN */
+  .main{flex:1;overflow-y:auto;padding:26px 30px;background:var(--bg);}
+  .view{display:none;animation:appear 0.18s ease;} .view.active{display:block;}
+  @keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+  /* PAGE HEADER */
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;}
+  .page-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:700;color:var(--ink);letter-spacing:-0.025em;}
+  .page-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);margin-top:3px;}
+
+  /* STAT CARDS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px 16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent-bar,var(--border));border-radius:0 3px 3px 0;}
+  .stat-card.sc-teal{--accent-bar:var(--teal-mid);} .stat-card.sc-red{--accent-bar:var(--red);} .stat-card.sc-amber{--accent-bar:var(--amber);}
+  .sc-label{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+  .sc-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;}
+  .stat-card.sc-teal .sc-value{color:var(--teal);} .stat-card.sc-red .sc-value{color:var(--red);} .stat-card.sc-amber .sc-value{color:var(--amber);}
+
+  /* BANNERS */
+  .banner{display:flex;align-items:flex-start;gap:10px;border-radius:var(--radius);padding:11px 14px;margin-bottom:14px;font-size:13px;animation:appear 0.18s ease;}
+  .banner svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0;margin-top:1px;}
+  .banner-amber{background:var(--amber-light);border:1px solid var(--amber-border);color:var(--amber);}
+  .banner-red{background:var(--red-light);border:1px solid var(--red-border);color:var(--red);}
+  .banner-orange{background:var(--orange-light);border:1px solid var(--orange-border);color:var(--orange);}
+  .banner ul{margin:4px 0 0 16px;font-size:12px;line-height:1.7;}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:180px;max-width:310px;}
+  .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--text3);fill:none;stroke-width:2;pointer-events:none;}
+  .search-in{width:100%;padding:8px 10px 8px 32px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'Figtree',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;box-shadow:var(--shadow-sm);}
+  .search-in::placeholder{color:var(--text3);}
+  .search-in:focus{border-color:var(--teal-mid);box-shadow:0 0 0 3px var(--teal-light);}
+  .fsel{padding:8px 26px 8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'Figtree',sans-serif;font-size:13px;color:var(--text2);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239098AA' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;box-shadow:var(--shadow-sm);}
+  .fsel:focus{border-color:var(--teal-mid);outline:none;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .13s ease;white-space:nowrap;}
+  .btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;}
+  .btn-p{background:var(--ink);color:white;box-shadow:0 1px 3px rgba(0,0,0,.15);} .btn-p:hover{background:#2A3045;}
+  .btn-t{background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);} .btn-t:hover{background:#d0ece8;}
+  .btn-g{background:var(--surface);color:var(--text2);border:1px solid var(--border);box-shadow:var(--shadow-sm);} .btn-g:hover{color:var(--text);background:var(--surface2);}
+  .btn-d{background:var(--red-light);color:var(--red);border:1px solid var(--red-border);} .btn-d:hover{background:#fad7d4;}
+  .btn-o{background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-border);} .btn-o:hover{background:#fde8d0;}
+  .btn-sm{padding:5px 10px;font-size:11px;border-radius:6px;} .btn-xs{padding:3px 8px;font-size:11px;border-radius:5px;}
+
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+  .table-scroll{overflow-y:auto;} .ts-inv{max-height:calc(100vh - 320px);} .ts-cat{max-height:calc(100vh - 260px);} .ts-orphan{max-height:calc(100vh - 240px);}
+  table{width:100%;border-collapse:collapse;}
+  thead{position:sticky;top:0;z-index:2;}
+  th{background:var(--surface2);padding:9px 14px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;user-select:none;}
+  th.sortable{cursor:pointer;transition:color .13s,background .13s;}
+  th.sortable:hover{color:var(--text2);background:var(--surface3);}
+  th.sort-asc,th.sort-desc{color:var(--teal);background:var(--teal-light);}
+  th.sort-asc::after{content:' ↑';font-size:10px;}
+  th.sort-desc::after{content:' ↓';font-size:10px;}
+  td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px;}
+  tr:last-child td{border-bottom:none;} tbody tr{transition:background .1s;} tbody tr:hover td{background:#FAFBFC;}
+  tr.orphan-row td{background:var(--red-light)!important;}
+  tr.orphan-row td:first-child{border-left:3px solid var(--red);}
+
+  /* CATALOG TAB TOGGLE */
+  .tab-bar{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px;margin-bottom:14px;width:fit-content;}
+  .tab-btn{padding:5px 16px;border-radius:7px;border:none;background:transparent;font-family:'Figtree',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .13s;white-space:nowrap;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);font-weight:600;}
+  .tab-btn.active.zero-tab{color:var(--red);}
+  .zero-count{display:inline-block;margin-left:5px;background:var(--red);color:white;border-radius:10px;padding:0px 6px;font-size:10px;font-family:'IBM Plex Mono',monospace;vertical-align:middle;}
+
+  /* ESSENTIAL TOGGLE */
+  .ess-toggle{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .15s;flex-shrink:0;}
+  .ess-toggle:hover{border-color:var(--amber);background:var(--amber-light);}
+  .ess-toggle.on{border-color:var(--amber);background:var(--amber-light);}
+  .ess-toggle svg{width:14px;height:14px;fill:none;stroke:var(--border2);stroke-width:2;transition:all .15s;}
+  .ess-toggle.on svg{stroke:var(--amber);fill:var(--amber);}
+  .ess-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-border);}
+  .ess-badge svg{width:10px;height:10px;fill:var(--amber);stroke:none;}
+  /* Essential filter pill button */
+  .ess-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-family:'Figtree',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;box-shadow:var(--shadow-sm);}
+  .ess-filter-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-light);}
+  .ess-filter-btn.active{border-color:var(--amber);color:var(--amber);background:var(--amber-light);font-weight:600;}
+  .ess-filter-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;transition:all .15s;}
+  .ess-filter-btn.active svg{fill:var(--amber);stroke:var(--amber);}
+
+  /* CHIPS */
+  .mat-chip{display:inline-block;padding:2px 8px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;background:var(--surface2);color:var(--text2);border:1px solid var(--border);letter-spacing:.04em;}
+  .type-chip{display:inline-block;padding:2px 8px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;}
+  .type-chip.matte{background:#FEF3E2;color:#A05C00;border:1px solid #F5D99A;}
+  .type-chip.basic{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+  .type-chip.silk{background:#EDE9FE;color:#5B21B6;border:1px solid #C4B5FD;}
+  .type-chip.translucent{background:#E0F2FE;color:#0369A1;border:1px solid #BAE6FD;}
+  .type-chip.sparkle{background:#FDF4FF;color:#86198F;border:1px solid #F0ABFC;}
+  .type-chip.marble{background:#F8FAFC;color:#475569;border:1px solid #CBD5E1;}
+  .type-chip.wood{background:#FEF9EC;color:#92400E;border:1px solid #FCD34D;}
+  .type-chip.carbon{background:#1E293B;color:#94A3B8;border:1px solid #334155;}
+  .type-chip.gradient{background:linear-gradient(135deg,#FEF3E2,#EDE9FE);color:#5B21B6;border:1px solid #C4B5FD;}
+  .type-chip.other{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;}
+
+  /* UPC PILLS — multiple per row */
+  .upc-list{display:flex;flex-wrap:wrap;gap:4px;}
+  .upc-pill{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;white-space:nowrap;}
+  .upc-pill.primary{color:var(--teal);border-color:var(--teal-border);background:var(--teal-light);}
+  .upc-pill.orphan{color:var(--red);border-color:var(--red-border);background:var(--red-light);}
+
+  .swatch-cell{display:inline-flex;align-items:center;gap:8px;}
+  .swatch{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.1);flex-shrink:0;}
+  .upc-mono{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.04em;}
+  .cnt-group{display:flex;align-items:center;gap:6px;}
+  .cnt-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;min-width:26px;text-align:center;color:var(--teal);font-variant-numeric:tabular-nums;letter-spacing:-0.01em;}
+  .cnt-val.low{color:var(--red);}
+  .cnt-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:all .12s;}
+  .cnt-btn:hover{border-color:var(--teal-mid);color:var(--teal);background:var(--teal-light);}
+  .loc-tag{display:inline-block;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:all .12s;}
+  .loc-tag:hover{border-color:var(--teal-mid);color:var(--teal);background:var(--teal-light);}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:60px 20px;}
+  .empty-icon{width:52px;height:52px;margin:0 auto 14px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;}
+  .empty-icon svg{width:24px;height:24px;stroke:var(--text3);fill:none;stroke-width:1.5;}
+  .empty h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text2);margin-bottom:5px;}
+  .empty p{font-size:12px;color:var(--text3);line-height:1.65;}
+
+  /* IMPORT */
+  .import-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s;}
+  .card:hover{border-color:var(--border2);box-shadow:var(--shadow-md);}
+  .card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .card-desc{font-size:12px;color:var(--text3);line-height:1.65;margin-bottom:16px;}
+  code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--teal-light);color:var(--teal);padding:1px 5px;border-radius:3px;border:1px solid var(--teal-border);}
+  .drop-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:30px 20px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;}
+  .drop-zone:hover,.drop-zone.dov{border-color:var(--teal-mid);background:var(--teal-light);border-style:solid;}
+  .drop-zone svg{width:26px;height:26px;stroke:var(--text3);fill:none;stroke-width:1.5;margin-bottom:8px;}
+  .drop-zone:hover svg,.drop-zone.dov svg{stroke:var(--teal-mid);}
+  .drop-zone p{font-size:12px;color:var(--text2);margin:0;} .drop-zone p strong{color:var(--text);font-weight:600;}
+  .drop-zone .hint{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;}
+  .res-msg{display:none;margin-top:10px;padding:9px 12px;border-radius:7px;font-size:12px;}
+  .res-msg.ok{display:block;background:var(--teal-light);border:1px solid var(--teal-border);color:var(--teal);}
+  .res-msg.warn{display:block;background:var(--amber-light);border:1px solid var(--amber-border);color:var(--amber);}
+  .res-msg.err{display:block;background:var(--red-light);border:1px solid var(--red-border);color:var(--red);}
+
+  /* UNMATCHED */
+  .um-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+  .um-row{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:12px;transition:background .1s;}
+  .um-row:hover{background:var(--surface2);} .um-row:last-child{border-bottom:none;}
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(17,19,24,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .16s;}
+  .overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;width:480px;max-width:92vw;box-shadow:var(--shadow-lg);transform:scale(.96) translateY(8px);transition:transform .16s ease;}
+  .overlay.open .modal{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+  .modal-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:20px;}
+  .f-label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:5px;}
+  .f-input{width:100%;padding:9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:'Figtree',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;margin-bottom:12px;}
+  .f-input::placeholder{color:var(--text3);}
+  .f-input:focus{border-color:var(--teal-mid);box-shadow:0 0 0 3px var(--teal-light);}
+  .f-select{width:100%;padding:9px 28px 9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:'Figtree',sans-serif;font-size:13px;color:var(--text);outline:none;appearance:none;cursor:pointer;margin-bottom:12px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239098AA' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+  .f-select:focus{border-color:var(--teal-mid);box-shadow:0 0 0 3px var(--teal-light);outline:none;}
+  .f-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .f-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .modal-foot{display:flex;gap:7px;justify-content:flex-end;margin-top:6px;}
+
+  /* UPC MANAGER inside modal */
+  .upc-manager{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;}
+  .upc-manager-title{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;}
+  .upc-manager-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+  .upc-row{display:flex;align-items:center;gap:6px;}
+  .upc-row-code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);flex:1;}
+  .upc-row-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 7px;border-radius:4px;background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);}
+  .upc-add-row{display:flex;gap:6px;}
+  .upc-add-input{flex:1;padding:6px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);outline:none;}
+  .upc-add-input:focus{border-color:var(--teal-mid);}
+
+  /* DIVIDER */
+  .divider{height:1px;background:var(--border);margin:16px 0;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:10px 16px;border-radius:9px;font-size:13px;z-index:9999;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(8px);transition:all .2s ease;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+
+  /* HAMBURGER + WEB MODE */
+  .hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text2);margin-right:10px;flex-shrink:0;-webkit-app-region:no-drag;}
+  .hamburger svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;}
+  .hamburger:hover{color:var(--text);background:var(--surface2);}
+  .sidebar-backdrop{display:none;position:fixed;inset:46px 0 0 0;background:rgba(17,19,24,.35);z-index:299;opacity:0;transition:opacity .22s;pointer-events:none;}
+  .sidebar-backdrop.open{opacity:1;pointer-events:auto;}
+  body.web .titlebar{padding-left:18px;}
+
+  /* RESPONSIVE: TABLET / MOBILE */
+  @media (max-width:900px){
+    body{height:auto;overflow-y:auto;overscroll-behavior-y:contain;}
+    .app{height:auto;min-height:100vh;}
+    .body{display:block;overflow:visible;}
+    .titlebar{padding-left:14px!important;padding-right:14px;position:sticky;top:0;z-index:250;}
+    .tb-stat{font-size:10px;padding:3px 9px;}
+    .hamburger{display:inline-flex;}
+    .sidebar{position:fixed;top:46px;bottom:0;left:0;width:250px;z-index:300;transform:translateX(-100%);transition:transform .22s ease;box-shadow:var(--shadow-lg);padding-top:14px;}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-backdrop{display:block;}
+    .main{overflow-y:visible;padding:18px 14px;}
+    .stats-row{grid-template-columns:1fr 1fr;gap:10px;}
+    .stat-card{padding:14px 16px 12px;}
+    .sc-value{font-size:26px;}
+    .import-grid{grid-template-columns:1fr;}
+    .page-head{flex-wrap:wrap;gap:10px;align-items:flex-start;}
+    .page-title{font-size:19px;}
+    .toolbar{gap:7px;}
+    .toolbar .search-wrap{flex:1 1 100%;max-width:none;min-width:0;}
+    .fsel{flex:1;min-width:0;}
+    .ess-filter-btn{flex:1;justify-content:center;}
+    .table-scroll{overflow-x:auto;max-height:none!important;-webkit-overflow-scrolling:touch;}
+    .card{padding:18px;}
+  }
+
+  @media (max-width:560px){
+    .tb-stat{display:none;}
+    .titlebar{padding-left:10px!important;padding-right:10px;}
+    .tb-wordmark{font-size:13px;}
+    .stats-row{gap:8px;}
+    .stat-card{padding:12px 12px 10px;}
+    .sc-value{font-size:22px;}
+    .sc-label{font-size:9px;margin-bottom:7px;}
+    .main{padding:14px 10px;}
+    .page-title{font-size:17px;}
+    .modal{padding:20px;border-radius:12px;}
+    .f-2,.f-3{grid-template-columns:1fr;}
+    .page-head > div:last-child{width:100%;}
+    .page-head > div:last-child .btn{flex:1;justify-content:center;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="titlebar">
+    <button class="hamburger" id="btn-menu" onclick="toggleSidebar()" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="tb-brand">
+      <div class="tb-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 2v20M3 7l9 5 9-5" stroke="white" stroke-width="1.6" stroke-linejoin="round" opacity=".4"/></svg>
+      </div>
+      <span class="tb-wordmark">Filament <span>Vault</span></span>
+    </div>
+    <div class="tb-right">
+      <div class="tb-stat">
+        <span class="tb-dot"></span>
+        <span id="h-total">0</span>&thinsp;spools&thinsp;·&thinsp;<span id="h-filaments">0</span>&thinsp;filaments&thinsp;·&thinsp;<span id="h-cat">0</span>&thinsp;catalog
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+    <nav class="sidebar">
+      <div class="nav-section">Views</div>
+      <button class="nav-btn active" onclick="showView('inventory',this)">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Inventory
+      </button>
+      <button class="nav-btn" onclick="showView('catalog',this)">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Catalog
+      </button>
+      <button class="nav-btn" onclick="showView('orphans',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Orphaned UPCs
+        <span class="nav-badge" id="orphan-badge">0</span>
+      </button>
+      <button class="nav-btn" onclick="showView('import',this)">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import
+      </button>
+      <button class="nav-btn" onclick="showView('unmatched',this)">
+        <svg viewBox="0 0 24 24"><path d="M8.56 2.9A7 7 0 1120.54 15"/><path d="M3.34 7a10 10 0 0017.32 10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        Unmatched Scans
+        <span class="nav-badge red" id="um-badge" style="display:none">0</span>
+      </button>
+      <div class="nav-section">Actions</div>
+      <button class="nav-btn" onclick="exportInventoryCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Inventory
+      </button>
+      <button class="nav-btn" onclick="confirmClearInventory()" style="color:var(--red);">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Clear Inventory
+      </button>
+      <div class="sidebar-foot">
+        <div class="save-row"><div class="save-pip" id="save-pip"></div><span id="save-txt">Saved</span></div>
+        <div class="data-path" id="dp"></div>
+      </div>
+    </nav>
+
+    <main class="main">
+
+      <!-- ════════ INVENTORY ════════ -->
+      <div class="view active" id="view-inventory">
+        <div class="page-head">
+          <div><div class="page-title">Inventory</div><div class="page-sub" id="inv-sub">—</div></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
+          <div class="stat-card"><div class="sc-label">Filaments</div><div class="sc-value" id="s-filaments">0</div></div>
+          <div class="stat-card"><div class="sc-label">Materials</div><div class="sc-value" id="s-mats">0</div></div>
+          <div class="stat-card sc-red"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
+        </div>
+        <div id="alert-area"></div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-in" id="q" type="text" placeholder="Search name, color, material, type, UPC…" oninput="renderInv()">
+          </div>
+          <select class="fsel" id="f-mat"   onchange="renderInv()"><option value="">All Materials</option></select>
+          <select class="fsel" id="f-brand" onchange="renderInv()"><option value="">All Brands</option></select>
+          <select class="fsel" id="f-type"  onchange="renderInv()"><option value="">All Types</option></select>
+          <button class="ess-filter-btn" id="inv-ess-btn" onclick="toggleEssFilter('inv')">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Essential Only
+          </button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll ts-inv">
+            <table>
+              <thead><tr>
+                <th style="width:36px;"></th>
+                <th class="sortable" onclick="sortInv('color')">Color</th>
+                <th class="sortable" onclick="sortInv('name')">Name</th>
+                <th class="sortable" onclick="sortInv('brand')">Brand</th>
+                <th class="sortable" onclick="sortInv('material')">Material</th>
+                <th class="sortable" onclick="sortInv('filamentType')">Type</th>
+                <th>UPCs</th>
+                <th class="sortable" onclick="sortInv('count')">Spools</th>
+                <th class="sortable" onclick="sortInv('location')">Location</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ CATALOG ════════ -->
+      <div class="view" id="view-catalog">
+        <div class="page-head">
+          <div><div class="page-title">Catalog</div><div class="page-sub" id="cat-sub">—</div></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-g" onclick="exportCatalogCSV()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Catalog
+            </button>
+            <button class="btn btn-p" onclick="openAddCatalog()">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Entry
+            </button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-in" id="cq" type="text" placeholder="Search catalog…" oninput="renderCatalog()">
+          </div>
+          <select class="fsel" id="cf-mat"   onchange="renderCatalog()"><option value="">All Materials</option></select>
+          <select class="fsel" id="cf-brand" onchange="renderCatalog()"><option value="">All Brands</option></select>
+          <select class="fsel" id="cf-type"  onchange="renderCatalog()"><option value="">All Types</option></select>
+          <button class="ess-filter-btn" id="cat-ess-btn" onclick="toggleEssFilter('cat')">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Essential Only
+          </button>
+        </div>
+
+        <!-- Tab toggle: All / Not in Inventory -->
+        <div class="tab-bar">
+          <button class="tab-btn active" id="cat-tab-all"  onclick="setCatalogTab('all')">All Entries</button>
+          <button class="tab-btn zero-tab" id="cat-tab-zero" onclick="setCatalogTab('zero')">
+            Not in Inventory <span class="zero-count" id="zero-count">0</span>
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-scroll ts-cat">
+            <table>
+              <thead><tr>
+                <th style="width:36px;"></th>
+                <th class="sortable" onclick="sortCatalog('color')">Color</th>
+                <th class="sortable" onclick="sortCatalog('brand')">Brand</th>
+                <th class="sortable" onclick="sortCatalog('material')">Material</th>
+                <th class="sortable" onclick="sortCatalog('filamentType')">Type</th>
+                <th class="sortable" onclick="sortCatalog('name')">Name / SKU</th>
+                <th>UPCs</th>
+                <th class="sortable" onclick="sortCatalog('spools')">In Inventory</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="cat-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ ORPHANED UPCs ════════ -->
+      <div class="view" id="view-orphans">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Orphaned UPCs</div>
+            <div class="page-sub" id="orphan-sub">Inventory entries whose UPCs no longer exist in the catalog</div>
+          </div>
+          <button class="btn btn-g" onclick="renderOrphans()">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div id="orphan-banner-area"></div>
+        <div id="orphan-wrap"></div>
+      </div>
+
+      <!-- ════════ IMPORT ════════ -->
+      <div class="view" id="view-import">
+        <div class="page-head">
+          <div><div class="page-title">Import Data</div><div class="page-sub">Catalog re-imports merge — existing inventory is preserved</div></div>
+        </div>
+        <div class="import-grid">
+          <div class="card">
+            <div class="card-title">Filament Catalog</div>
+            <div class="card-desc">CSV: <code>UPC, Brand, Material, Type, Color, Name</code><br>
+              Re-importing <strong>merges</strong> — new entries added, existing updated, inventory untouched.</div>
+            <div class="drop-zone" id="dz-c" onclick="openFile('catalog')"
+              ondragover="dzo(event,'dz-c')" ondragleave="dzl('dz-c')" ondrop="dzd(event,'catalog')">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <p><strong>Click to browse</strong> or drag &amp; drop</p>
+              <p class="hint">CSV · merges with existing catalog</p>
+            </div>
+            <div class="res-msg" id="r-cat"></div>
+            <button class="btn btn-g" onclick="dlCat()" style="margin-top:10px;font-size:11px;">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Sample Catalog
+            </button>
+          </div>
+          <div class="card">
+            <div class="card-title">UPC Scan File</div>
+            <div class="card-desc">Upload a <code>.txt</code> file <em>or</em> paste UPCs directly below — one per line. Duplicates add +1 spool each.</div>
+
+            <!-- Mode toggle -->
+            <div class="tab-bar" style="margin-bottom:12px;">
+              <button class="tab-btn active" id="scan-tab-file"  onclick="setScanMode('file')">Upload File</button>
+              <button class="tab-btn"        id="scan-tab-paste" onclick="setScanMode('paste')">Paste UPCs</button>
+            </div>
+
+            <!-- File upload mode -->
+            <div id="scan-mode-file">
+              <div class="drop-zone" id="dz-s" onclick="openFile('scan')"
+                ondragover="dzo(event,'dz-s')" ondragleave="dzl('dz-s')" ondrop="dzd(event,'scan')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
+                <p><strong>Click to browse</strong> or drag &amp; drop</p>
+                <p class="hint">.txt · one UPC per line</p>
+              </div>
+            </div>
+
+            <!-- Paste mode -->
+            <div id="scan-mode-paste" style="display:none;">
+              <textarea id="paste-upcs"
+                placeholder="Paste UPCs here — one per line:&#10;6949614921234&#10;6949614921234&#10;6949614921235&#10;..."
+                style="width:100%;height:130px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;line-height:1.6;transition:border-color .15s;"
+                onfocus="this.style.borderColor='var(--teal-mid)'"
+                onblur="this.style.borderColor='var(--border)'"
+              ></textarea>
+              <button class="btn btn-p" onclick="processPastedScans()" style="margin-top:8px;width:100%;justify-content:center;">
+                <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Process Pasted UPCs
+              </button>
+            </div>
+
+            <div class="res-msg" id="r-scan"></div>
+            <button class="btn btn-g" onclick="dlScans()" style="margin-top:10px;font-size:11px;">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Sample Scans
+            </button>
+          </div>
+        </div>
+        <div class="card" style="max-width:480px;">
+          <div class="card-title">Add Spool Manually</div>
+          <div class="card-desc">Enter a UPC — it will match against the catalog and pool into the correct filament.</div>
+          <div class="f-2" style="margin-bottom:12px;">
+            <div><label class="f-label">UPC</label><input class="f-input" id="m-upc" placeholder="012345678901" style="margin:0"></div>
+            <div><label class="f-label">Quantity</label><input class="f-input" type="number" id="m-qty" value="1" min="1" style="margin:0"></div>
+          </div>
+          <button class="btn btn-p" onclick="manualAdd()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add to Inventory
+          </button>
+          <div class="res-msg" id="r-man"></div>
+        </div>
+      </div>
+
+      <!-- ════════ UNMATCHED ════════ -->
+      <div class="view" id="view-unmatched">
+        <div class="page-head">
+          <div><div class="page-title">Unmatched Scans</div><div class="page-sub" id="um-sub">Barcodes from scan files with no catalog match</div></div>
+        </div>
+        <div id="um-wrap"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+<!-- ══ MODAL: Edit Inventory Entry ══ -->
+<div class="overlay" id="ov-edit">
+  <div class="modal">
+    <div class="modal-title" id="m-title">Edit</div>
+    <div class="modal-sub"   id="m-sub"></div>
+
+    <!-- UPC Manager -->
+    <div class="upc-manager">
+      <div class="upc-manager-title">UPCs mapped to this filament</div>
+      <div class="upc-manager-list" id="upc-manager-list"></div>
+      <div class="upc-add-row">
+        <input class="upc-add-input" id="upc-add-val" placeholder="Add UPC…" onkeydown="if(event.key==='Enter')addUpcToEntry()">
+        <button class="btn btn-t btn-sm" onclick="addUpcToEntry()">Add</button>
+      </div>
+    </div>
+
+    <label class="f-label">Storage Location</label>
+    <input class="f-input" id="m-loc" placeholder="e.g. Shelf A · Bin 3 · Dry Box 1">
+    <label class="f-label">Spool Count</label>
+    <input class="f-input" type="number" id="m-cnt" min="0">
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-d btn-sm" onclick="delEntry()">Remove Entry</button>
+      <button class="btn btn-p btn-sm" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add / Edit Catalog Entry ══ -->
+<div class="overlay" id="ov-catalog">
+  <div class="modal">
+    <div class="modal-title" id="ce-title">Add Catalog Entry</div>
+    <div class="modal-sub"   id="ce-sub">New filament SKU</div>
+
+    <!-- UPC Manager for catalog -->
+    <div class="upc-manager">
+      <div class="upc-manager-title">UPCs (Bambu may issue multiple for the same filament)</div>
+      <div class="upc-manager-list" id="ce-upc-list"></div>
+      <div class="upc-add-row">
+        <input class="upc-add-input" id="ce-upc-add" placeholder="Add UPC…" onkeydown="if(event.key==='Enter')addCatalogUpc()">
+        <button class="btn btn-t btn-sm" onclick="addCatalogUpc()">Add</button>
+      </div>
+    </div>
+
+    <div class="f-2">
+      <div><label class="f-label">Brand *</label><input class="f-input" id="ce-brand" placeholder="Bambu Lab"></div>
+      <div><label class="f-label">Filament Type</label>
+        <select class="f-select" id="ce-ftype">
+          <option value="">— Select —</option>
+          <option>Basic</option><option>Matte</option><option>Silk</option>
+          <option>Translucent</option><option>Sparkle</option><option>Marble</option>
+          <option>Wood</option><option>Carbon</option><option>Gradient</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="f-2">
+      <div><label class="f-label">Material *</label><input class="f-input" id="ce-mat" placeholder="PLA" style="margin:0"></div>
+      <div><label class="f-label">Color *</label><input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0"></div>
+    </div>
+    <div style="margin-top:12px;">
+      <label class="f-label">Name / SKU (auto-generated if blank)</label>
+      <input class="f-input" id="ce-name" placeholder="e.g. Bambu PLA Matte Jade White">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeCatalogModal()">Cancel</button>
+      <button class="btn btn-d btn-sm" id="ce-del-btn" onclick="deleteCatalogEntry()" style="display:none">Delete</button>
+      <button class="btn btn-p btn-sm" onclick="saveCatalogEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Resolve Unmatched ══ -->
+<div class="overlay" id="ov-resolve">
+  <div class="modal">
+    <div class="modal-title">Resolve UPC</div>
+    <div class="modal-sub" id="rv-upc"></div>
+    <div class="f-2">
+      <div><label class="f-label">Brand</label><input class="f-input" id="rv-brand" placeholder="Bambu Lab"></div>
+      <div><label class="f-label">Filament Type</label>
+        <select class="f-select" id="rv-ftype">
+          <option value="">— Select —</option>
+          <option>Basic</option><option>Matte</option><option>Silk</option>
+          <option>Translucent</option><option>Sparkle</option><option>Marble</option>
+          <option>Wood</option><option>Carbon</option><option>Gradient</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="f-2">
+      <div><label class="f-label">Material</label><input class="f-input" id="rv-mat" placeholder="PLA"></div>
+      <div><label class="f-label">Color</label><input class="f-input" id="rv-col" placeholder="Jade White"></div>
+    </div>
+    <label class="f-label">Name / SKU</label>
+    <input class="f-input" id="rv-name" placeholder="e.g. Bambu PLA Matte Jade White">
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeResolve()">Cancel</button>
+      <button class="btn btn-p btn-sm" onclick="saveResolve()">Add to Inventory</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Reassign Orphan ══ -->
+<div class="overlay" id="ov-orphan">
+  <div class="modal">
+    <div class="modal-title">Reassign Orphaned UPC</div>
+    <div class="modal-sub" id="or-sub"></div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      This UPC is no longer in the catalog. Choose how to handle it:
+    </p>
+    <label class="f-label">Reassign to catalog entry (type to search)</label>
+    <select class="f-select" id="or-target" style="margin-bottom:16px;"></select>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeOrphanModal()">Cancel</button>
+      <button class="btn btn-d btn-sm" onclick="removeOrphanSpools()">Remove These Spools</button>
+      <button class="btn btn-p btn-sm" onclick="reassignOrphan()">Reassign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Clear Inventory Confirm ══ -->
+<div class="overlay" id="ov-clear">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title" style="color:var(--red);">Clear All Inventory?</div>
+    <div class="modal-sub">This cannot be undone</div>
+    <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:8px;">
+      This will permanently remove all <strong id="clear-count">0</strong> spool entries from inventory.
+      Your <strong>catalog will not be affected</strong> — only the tracked spool counts and locations are cleared.
+    </p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:20px;">Tip: Export your inventory first if you want a backup.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-g btn-sm" onclick="exportInventoryCSV()" style="flex:1;justify-content:center;">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export First
+      </button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeClearModal()">Cancel</button>
+      <button class="btn btn-d" onclick="clearInventory()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        Yes, Clear All Inventory
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA MODEL
+//
+// catalog: { [filamentKey]: {
+//   filamentKey, brand, material, filamentType, color, name,
+//   upcs: [upc, ...]       ← all known UPCs for this filament
+// }}
+//
+// inventory: { [filamentKey]: {
+//   filamentKey, brand, material, filamentType, color, name,
+//   upcs: [upc, ...],      ← UPCs that contributed to this entry
+//   count, location
+// }}
+//
+// upcIndex: { [upc]: filamentKey }   ← fast reverse lookup
+//
+// unmatched: [{ upc, count }]        ← scanned but no catalog match
+// ════════════════════════════════════════════════
+
+let catalog   = {};
+let inventory = {};
+let upcIndex  = {};   // upc -> filamentKey
+let unmatched = [];
+let saveTimer = null;
+
+// ──────────────────────────────────────────────
+// Platform API — Electron IPC when available,
+// otherwise a browser fallback using localStorage
+// and the HTML file input.
+// ──────────────────────────────────────────────
+const LS_KEY = 'filament-vault-data';
+const webAPI = {
+  loadData: async () => {
+    try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; }
+    catch (e) { console.error('loadData', e); return null; }
+  },
+  saveData: async (data) => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); return { success: true }; }
+    catch (e) { return { success: false, error: e.message }; }
+  },
+  getDataPath: async () => 'Browser localStorage · ' + LS_KEY,
+  openFileDialog: async (options) => new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    const exts = (options?.filters?.[0]?.extensions || []).map(e => '.' + e).join(',');
+    if (exts) input.accept = exts;
+    input.onchange = e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload  = ev => resolve({ filePath: file.name, content: ev.target.result });
+      reader.onerror = () => resolve({ error: 'read failed' });
+      reader.readAsText(file);
+    };
+    input.click();
+  }),
+  // Native save dialog isn't available in the browser — callers fall back to dlFile()
+  saveExportDialog: async () => null,
+};
+const api = window.electronAPI || webAPI;
+if (!window.electronAPI) document.body.classList.add('web');
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 900) {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebar-backdrop').classList.remove('open');
+  }
+}
+
+// Modal state
+let editKey        = null;
+let editUpcList    = [];   // working copy of upcs during edit
+let catalogEditKey = null;
+let ceUpcList      = [];   // working copy of upcs during catalog edit
+let resolveUpc     = null;
+let orphanUpc      = null;
+let orphanInvKey   = null;
+
+// Sort state
+let invSort    = { col: 'name', dir: 'asc' };
+let catSort    = { col: 'name', dir: 'asc' };
+let catalogTab = 'all';  // 'all' | 'zero'
+
+// Essential filter state
+let invEssOnly = false;
+let catEssOnly = false;
+
+// ════════════════════════════════════════════════
+// SORT HELPERS
+// ════════════════════════════════════════════════
+function sortInv(col) {
+  if (invSort.col === col) invSort.dir = invSort.dir === 'asc' ? 'desc' : 'asc';
+  else { invSort.col = col; invSort.dir = 'asc'; }
+  renderInv();
+}
+
+function sortCatalog(col) {
+  if (catSort.col === col) catSort.dir = catSort.dir === 'asc' ? 'desc' : 'asc';
+  else { catSort.col = col; catSort.dir = 'asc'; }
+  renderCatalog();
+}
+
+function setCatalogTab(tab) {
+  catalogTab = tab;
+  document.getElementById('cat-tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('cat-tab-zero').classList.toggle('active', tab === 'zero');
+  renderCatalog();
+}
+
+function applySort(items, col, dir, getVal) {
+  return [...items].sort((a, b) => {
+    const av = getVal(a, col), bv = getVal(b, col);
+    const cmp = typeof av === 'number'
+      ? av - bv
+      : (av || '').toString().toLowerCase().localeCompare((bv || '').toString().toLowerCase());
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function updateSortHeaders(tableId, sortState, sortableCols) {
+  const table = document.querySelector(`#${tableId}`).closest('table');
+  if (!table) return;
+  table.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  // Find the th whose onclick matches the current sort col
+  table.querySelectorAll('th.sortable').forEach(th => {
+    const fn = th.getAttribute('onclick') || '';
+    const match = fn.match(/'([^']+)'/);
+    if (match && match[1] === sortState.col) {
+      th.classList.add(sortState.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
+// CATALOG TAB
+// ════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════
+// ESSENTIAL FLAG
+// ════════════════════════════════════════════════
+function toggleEssential(key) {
+  // Toggle on the catalog entry — inventory mirrors it
+  if (catalog[key]) catalog[key].essential = !catalog[key].essential;
+  // Sync to inventory entry if it exists
+  if (inventory[key]) inventory[key].essential = catalog[key]?.essential || false;
+  renderCatalog();
+  renderInv();
+  sched();
+}
+
+function toggleEssFilter(view) {
+  if (view === 'inv') {
+    invEssOnly = !invEssOnly;
+    document.getElementById('inv-ess-btn').classList.toggle('active', invEssOnly);
+    renderInv();
+  } else {
+    catEssOnly = !catEssOnly;
+    document.getElementById('cat-ess-btn').classList.toggle('active', catEssOnly);
+    renderCatalog();
+  }
+}
+
+function starIcon(filled) {
+  return filled
+    ? `<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:var(--amber);stroke:var(--amber);stroke-width:1.5;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+    : `<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:var(--border2);stroke-width:1.5;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+}
+function makeKey(brand, material, filamentType, color) {
+  return [brand, material, filamentType, color]
+    .map(s => (s || '').trim().toLowerCase().replace(/\s+/g, '_'))
+    .join('::');
+}
+
+function buildName(brand, material, filamentType, color) {
+  return [brand, material, filamentType, color].filter(Boolean).join(' ');
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+async function init() {
+  const p = await api.getDataPath();
+  document.getElementById('dp').textContent = p;
+  const d = await api.loadData();
+  if (d) {
+    catalog   = d.catalog   || {};
+    inventory = d.inventory || {};
+    upcIndex  = d.upcIndex  || {};
+    unmatched = d.unmatched || {};
+
+    // Migrate old UPC-keyed data if needed
+    migrateOldData(d);
+  }
+  rebuildUpcIndex();
+  renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
+  updateStats(); updateBadge();
+}
+
+// Handle old format where catalog/inventory were keyed by UPC
+function migrateOldData(d) {
+  const oldCat = d.catalog || {};
+  const oldInv = d.inventory || {};
+  // If the first key looks like a UPC (all digits), migrate
+  const firstCatKey = Object.keys(oldCat)[0] || '';
+  if (firstCatKey && /^\d+$/.test(firstCatKey)) {
+    catalog = {}; inventory = {}; upcIndex = {};
+    Object.values(oldCat).forEach(item => {
+      const key = makeKey(item.brand, item.material, item.filamentType, item.color);
+      const upc = item.upc || firstCatKey;
+      if (!catalog[key]) {
+        catalog[key] = { filamentKey: key, brand: item.brand, material: item.material,
+          filamentType: item.filamentType || '', color: item.color, name: item.name || buildName(item.brand, item.material, item.filamentType, item.color),
+          upcs: [upc] };
+      } else if (!catalog[key].upcs.includes(upc)) {
+        catalog[key].upcs.push(upc);
+      }
+    });
+    Object.values(oldInv).forEach(item => {
+      const key = makeKey(item.brand, item.material, item.filamentType, item.color);
+      const upc = item.upc || '';
+      if (!inventory[key]) {
+        inventory[key] = { filamentKey: key, brand: item.brand, material: item.material,
+          filamentType: item.filamentType || '', color: item.color,
+          name: item.name || buildName(item.brand, item.material, item.filamentType, item.color),
+          upcs: upc ? [upc] : [], count: item.count || 0, location: item.location || '' };
+      } else {
+        inventory[key].count += item.count || 0;
+        if (upc && !inventory[key].upcs.includes(upc)) inventory[key].upcs.push(upc);
+      }
+    });
+    rebuildUpcIndex();
+  }
+}
+
+function rebuildUpcIndex() {
+  upcIndex = {};
+  Object.values(catalog).forEach(entry => {
+    (entry.upcs || []).forEach(upc => { upcIndex[upc] = entry.filamentKey; });
+  });
+}
+
+// ════════════════════════════════════════════════
+// SAVE
+// ════════════════════════════════════════════════
+function sched() {
+  const pip = document.getElementById('save-pip'), txt = document.getElementById('save-txt');
+  pip.className = 'save-pip saving'; txt.textContent = 'Saving…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    await api.saveData({ catalog, inventory, upcIndex, unmatched });
+    pip.className = 'save-pip'; txt.textContent = 'Saved';
+  }, 800);
+}
+
+// ════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════
+function showView(n, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + n).classList.add('active');
+  if (el) el.classList.add('active');
+  if (n === 'inventory') renderInv();
+  if (n === 'catalog')   renderCatalog();
+  if (n === 'orphans')   renderOrphans();
+  if (n === 'unmatched') renderUnmatched();
+  closeSidebarOnMobile();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════
+// FILE I/O
+// ════════════════════════════════════════════════
+async function openFile(t) {
+  const f = t === 'catalog' ? [{ name: 'CSV', extensions: ['csv','txt'] }] : [{ name: 'Text', extensions: ['txt'] }];
+  const r = await api.openFileDialog({ filters: f });
+  if (r?.content) t === 'catalog' ? parseCat(r.content) : processScans(r.content);
+}
+function dzo(e, id) { e.preventDefault(); document.getElementById(id).classList.add('dov'); }
+function dzl(id)    { document.getElementById(id).classList.remove('dov'); }
+function dzd(e, t)  {
+  e.preventDefault(); dzl(t === 'catalog' ? 'dz-c' : 'dz-s');
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => t === 'catalog' ? parseCat(ev.target.result) : processScans(ev.target.result);
+  r.readAsText(f);
+}
+
+// ════════════════════════════════════════════════
+// CATALOG PARSING  — MERGE mode
+// ════════════════════════════════════════════════
+function parseCat(text) {
+  const lines = text.trim().split('\n');
+  let hdr = null, added = 0, updated = 0, merged = 0;
+
+  lines.forEach((line, i) => {
+    const cols = csvLine(line);
+    if (i === 0) {
+      const lc = cols.map(c => c.toLowerCase().trim());
+      if (lc.some(c => c.includes('upc') || c.includes('brand') || c.includes('material'))) {
+        hdr = lc; return;
+      }
+    }
+    if (cols.length < 2) return;
+
+    let upc, brand, material, color, filamentType, name;
+    if (hdr) {
+      const idx = k => hdr.findIndex(h => h.includes(k));
+      upc          = (cols[idx('upc')]       || '').trim().replace(/\D/g, '');
+      brand        = (cols[idx('brand')]     || '').trim();
+      material     = (cols[idx('material')]  || '').trim().toUpperCase();
+      color        = (cols[idx('color')]     || '').trim();
+      filamentType = (cols[idx('type')]      || '').trim();
+      name         = (cols[idx('name')]      || '').trim();
+    } else {
+      [upc, brand, material, color, filamentType, name] = cols.map(c => c.trim());
+      upc = (upc || '').replace(/\D/g, '');
+      material = (material || '').toUpperCase();
+      filamentType = filamentType || '';
+    }
+    if (!upc || !brand || !material) return;
+    name = name || buildName(brand, material, filamentType, color);
+
+    const key = makeKey(brand, material, filamentType, color);
+
+    if (catalog[key]) {
+      // Merge: update fields, add UPC if new
+      catalog[key].brand = brand; catalog[key].material = material;
+      catalog[key].filamentType = filamentType; catalog[key].color = color;
+      catalog[key].name = name;
+      if (upc && !catalog[key].upcs.includes(upc)) {
+        catalog[key].upcs.push(upc); merged++;
+      }
+      // Also update inventory entry if it exists
+      if (inventory[key]) {
+        inventory[key].brand = brand; inventory[key].material = material;
+        inventory[key].filamentType = filamentType; inventory[key].color = color;
+        inventory[key].name = name;
+        if (upc && !inventory[key].upcs.includes(upc)) inventory[key].upcs.push(upc);
+      }
+      updated++;
+    } else {
+      // Check if this UPC was previously associated with a different key
+      const existingKey = upcIndex[upc];
+      if (existingKey && catalog[existingKey]) {
+        // Add this as an additional UPC to the existing entry
+        if (!catalog[existingKey].upcs.includes(upc)) catalog[existingKey].upcs.push(upc);
+        merged++;
+      } else {
+        catalog[key] = { filamentKey: key, brand, material, filamentType, color, name, upcs: upc ? [upc] : [] };
+        added++;
+      }
+    }
+  });
+
+  rebuildUpcIndex();
+
+  const orphanCount = getOrphans().length;
+  let msg = `✓ Catalog merged — ${added} added, ${updated} updated, ${merged} new UPC(s) linked`;
+  if (orphanCount > 0) msg += `. ⚠ ${orphanCount} orphaned inventory UPC(s) detected.`;
+
+  setRes('r-cat', orphanCount > 0 ? 'warn' : 'ok', msg);
+  updateStats(); renderCatalog(); renderOrphans(); sched();
+}
+
+function csvLine(l) {
+  const r = []; let c = '', q = false;
+  for (const ch of l) {
+    if (ch === '"') q = !q;
+    else if (ch === ',' && !q) { r.push(c); c = ''; }
+    else c += ch;
+  }
+  r.push(c); return r;
+}
+
+// ════════════════════════════════════════════════
+// SCAN PROCESSING
+// ════════════════════════════════════════════════
+function processScans(text) {
+  const lines = text.trim().split('\n');
+  let matched = 0;
+  const um = {};
+
+  lines.forEach(l => {
+    const upc = l.trim().replace(/\D/g, ''); if (!upc) return;
+    const key = upcIndex[upc];
+    if (key && catalog[key]) {
+      // Pool into filament identity
+      if (!inventory[key]) {
+        inventory[key] = { ...catalog[key], upcs: [upc], count: 0, location: '' };
+        inventory[key].essential = catalog[key].essential || false;
+      } else if (!inventory[key].upcs.includes(upc)) {
+        inventory[key].upcs.push(upc);
+      }
+      inventory[key].count++;
+      matched++;
+    } else {
+      um[upc] = (um[upc] || 0) + 1;
+    }
+  });
+
+  const umCnt = Object.keys(um).length;
+  unmatched = [...unmatched.filter(u => !um[u.upc]), ...Object.entries(um).map(([upc, count]) => ({ upc, count }))];
+  const total = matched + Object.values(um).reduce((s, v) => s + v, 0);
+  setRes('r-scan', 'ok', `✓ ${total} codes: ${matched} matched, ${umCnt} unmatched`);
+  updateBadge(); updateStats(); renderInv(); sched();
+}
+
+// ════════════════════════════════════════════════
+// SCAN MODE TOGGLE (file vs paste)
+// ════════════════════════════════════════════════
+function setScanMode(mode) {
+  document.getElementById('scan-mode-file').style.display  = mode === 'file'  ? 'block' : 'none';
+  document.getElementById('scan-mode-paste').style.display = mode === 'paste' ? 'block' : 'none';
+  document.getElementById('scan-tab-file').classList.toggle('active',  mode === 'file');
+  document.getElementById('scan-tab-paste').classList.toggle('active', mode === 'paste');
+  if (mode === 'paste') document.getElementById('paste-upcs').focus();
+}
+
+function processPastedScans() {
+  const text = document.getElementById('paste-upcs').value.trim();
+  if (!text) { setRes('r-scan', 'err', '⚠ Nothing pasted yet'); return; }
+  processScans(text);
+  // Optionally clear the textarea after processing
+  document.getElementById('paste-upcs').value = '';
+}
+
+// ════════════════════════════════════════════════
+// CLEAR INVENTORY
+// ════════════════════════════════════════════════
+function confirmClearInventory() {
+  const total = Object.values(inventory).reduce((s, i) => s + i.count, 0);
+  document.getElementById('clear-count').textContent = total;
+  document.getElementById('ov-clear').classList.add('open');
+}
+
+function closeClearModal() {
+  document.getElementById('ov-clear').classList.remove('open');
+}
+
+function clearInventory() {
+  inventory = {};
+  closeClearModal();
+  updateStats(); renderInv(); renderCatalog(); renderOrphans(); sched();
+  toast('Inventory cleared — catalog intact');
+}
+
+// ════════════════════════════════════════════════
+// MANUAL ADD
+// ════════════════════════════════════════════════
+function manualAdd() {
+  const upc = document.getElementById('m-upc').value.trim().replace(/\D/g, '');
+  const qty = parseInt(document.getElementById('m-qty').value) || 1;
+  if (!upc) { setRes('r-man', 'err', '⚠ Enter a UPC'); return; }
+  const key = upcIndex[upc];
+  if (key && catalog[key]) {
+    if (!inventory[key]) inventory[key] = { ...catalog[key], upcs: [upc], count: 0, location: '' };
+    else if (!inventory[key].upcs.includes(upc)) inventory[key].upcs.push(upc);
+    inventory[key].count += qty;
+    setRes('r-man', 'ok', `✓ Added ${qty} × ${catalog[key].name}`);
+    updateStats(); renderInv();
+  } else {
+    const ex = unmatched.find(u => u.upc === upc);
+    if (ex) ex.count += qty; else unmatched.push({ upc, count: qty });
+    setRes('r-man', 'err', '⚠ UPC not in catalog — added to Unmatched');
+    updateBadge();
+  }
+  document.getElementById('m-upc').value = ''; sched();
+}
+
+// ════════════════════════════════════════════════
+// ORPHAN DETECTION
+// ════════════════════════════════════════════════
+function getOrphans() {
+  // An orphan = an inventory entry that has UPCs not present in ANY catalog entry's upc list
+  const catalogUpcs = new Set(Object.values(upcIndex).map(k => k).flatMap(() => []));
+  // Actually: any UPC in inventory.upcs that is NOT in upcIndex
+  const orphans = [];
+  Object.values(inventory).forEach(invEntry => {
+    (invEntry.upcs || []).forEach(upc => {
+      if (!upcIndex[upc]) {
+        orphans.push({ upc, invKey: invEntry.filamentKey, invEntry });
+      }
+    });
+  });
+  return orphans;
+}
+
+function renderOrphans() {
+  const orphans = getOrphans();
+  const badge = document.getElementById('orphan-badge');
+  const wrap  = document.getElementById('orphan-wrap');
+  const bannerArea = document.getElementById('orphan-banner-area');
+
+  // Update badge
+  if (orphans.length > 0) {
+    badge.textContent = orphans.length;
+    badge.className = 'nav-badge amber';
+  } else {
+    badge.className = 'nav-badge';
+    badge.style.display = 'none';
+  }
+
+  if (!orphans.length) {
+    bannerArea.innerHTML = '';
+    wrap.innerHTML = `<div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+      <h3>No orphaned UPCs</h3>
+      <p>All inventory UPCs are linked to catalog entries.<br>You're in good shape.</p>
+    </div>`;
+    document.getElementById('orphan-sub').textContent = 'All inventory UPCs are linked to current catalog entries';
+    return;
+  }
+
+  document.getElementById('orphan-sub').textContent = `${orphans.length} UPC${orphans.length !== 1 ? 's' : ''} found in inventory but missing from catalog`;
+
+  bannerArea.innerHTML = `<div class="banner banner-orange">
+    <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Orphaned UPCs detected</strong> — these inventory entries have UPCs that no longer exist in the catalog.
+      This typically happens when Bambu reassigns a UPC. You can <strong>Reassign</strong> each one to the correct current catalog entry,
+      or <strong>Remove</strong> those specific spool counts.
+    </div>
+  </div>`;
+
+  // Group orphans by inventory entry
+  const byKey = {};
+  orphans.forEach(o => {
+    if (!byKey[o.invKey]) byKey[o.invKey] = { invEntry: o.invEntry, upcs: [] };
+    byKey[o.invKey].upcs.push(o.upc);
+  });
+
+  wrap.innerHTML = `<div class="table-wrap">
+    <div class="table-scroll ts-orphan">
+      <table>
+        <thead><tr>
+          <th>Filament (Inventory Entry)</th><th>Orphaned UPC(s)</th><th>Spool Count</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${Object.values(byKey).map(({ invEntry, upcs }) => `
+            <tr class="orphan-row">
+              <td>
+                <div style="font-weight:600;color:var(--ink)">${invEntry.name}</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px;">${invEntry.brand} · ${invEntry.material}${invEntry.filamentType ? ' · ' + invEntry.filamentType : ''}</div>
+              </td>
+              <td>
+                <div class="upc-list">
+                  ${upcs.map(u => `<span class="upc-pill orphan">${u}</span>`).join('')}
+                </div>
+              </td>
+              <td><span class="cnt-val" style="font-size:15px;">${invEntry.count}</span></td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <button class="btn btn-o btn-sm" onclick="openOrphanModal('${upcs[0]}','${invEntry.filamentKey}')">Reassign</button>
+                  <button class="btn btn-g btn-sm" onclick="keepOrphan('${invEntry.filamentKey}')">Keep As-Is</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function keepOrphan(key) {
+  // Re-add the orphaned UPCs back to the catalog entry so they're no longer orphans
+  if (!inventory[key] || !catalog[key]) return;
+  (inventory[key].upcs || []).forEach(upc => {
+    if (!upcIndex[upc]) {
+      catalog[key].upcs.push(upc);
+      upcIndex[upc] = key;
+    }
+  });
+  sched(); renderOrphans(); toast('UPCs re-linked to catalog entry');
+}
+
+function openOrphanModal(upc, invKey) {
+  orphanUpc = upc; orphanInvKey = invKey;
+  const invEntry = inventory[invKey];
+  document.getElementById('or-sub').textContent = `UPC ${upc} · from "${invEntry?.name}"`;
+
+  // Build target select from all catalog entries
+  const sel = document.getElementById('or-target');
+  sel.innerHTML = Object.values(catalog).sort((a,b) => a.name.localeCompare(b.name))
+    .map(e => `<option value="${e.filamentKey}">${e.name} (${e.upcs.join(', ')})</option>`).join('');
+
+  document.getElementById('ov-orphan').classList.add('open');
+}
+
+function closeOrphanModal() { document.getElementById('ov-orphan').classList.remove('open'); orphanUpc = null; orphanInvKey = null; }
+
+function reassignOrphan() {
+  if (!orphanUpc || !orphanInvKey) return;
+  const targetKey = document.getElementById('or-target').value;
+  if (!targetKey) return;
+
+  // Add UPC to catalog target
+  if (!catalog[targetKey].upcs.includes(orphanUpc)) catalog[targetKey].upcs.push(orphanUpc);
+  upcIndex[orphanUpc] = targetKey;
+
+  // Move spool count to target inventory entry
+  const srcInv = inventory[orphanInvKey];
+  if (srcInv) {
+    const spoolsToMove = srcInv.count;
+    if (!inventory[targetKey]) {
+      inventory[targetKey] = { ...catalog[targetKey], upcs: [orphanUpc], count: 0, location: '' };
+    }
+    inventory[targetKey].count += spoolsToMove;
+    inventory[targetKey].upcs = [...new Set([...inventory[targetKey].upcs, orphanUpc])];
+    // Remove old entry
+    delete inventory[orphanInvKey];
+  }
+
+  closeOrphanModal(); sched(); updateStats(); renderOrphans(); renderInv();
+  toast('Orphaned UPC reassigned successfully');
+}
+
+function removeOrphanSpools() {
+  if (!orphanInvKey) return;
+  delete inventory[orphanInvKey];
+  closeOrphanModal(); sched(); updateStats(); renderOrphans(); renderInv();
+  toast('Orphaned spool entry removed');
+}
+
+// ════════════════════════════════════════════════
+// RENDER INVENTORY
+// ════════════════════════════════════════════════
+function renderInv() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const mf = document.getElementById('f-mat').value;
+  const bf = document.getElementById('f-brand').value;
+  const tf = document.getElementById('f-type').value;
+
+  const mats   = [...new Set(Object.values(inventory).map(i => i.material).filter(Boolean))].sort();
+  const brands = [...new Set(Object.values(inventory).map(i => i.brand).filter(Boolean))].sort();
+  const types  = [...new Set(Object.values(inventory).map(i => i.filamentType).filter(Boolean))].sort();
+  rebuildSel('f-mat', mf, mats, 'All Materials');
+  rebuildSel('f-brand', bf, brands, 'All Brands');
+  rebuildSel('f-type', tf, types, 'All Types');
+
+  const orphanUpcs = new Set(getOrphans().map(o => o.upc));
+
+  const getInvVal = (it, col) => {
+    if (col === 'count')  return it.count || 0;
+    if (col === 'name')   return it.name || '';
+    if (col === 'color')  return it.color || '';
+    if (col === 'brand')  return it.brand || '';
+    if (col === 'material') return it.material || '';
+    if (col === 'filamentType') return it.filamentType || '';
+    if (col === 'location') return it.location || '';
+    return '';
+  };
+
+  let items = Object.values(inventory).filter(it => {
+    const s = !q || [it.name, it.color, it.material, it.brand, it.filamentType, ...(it.upcs || [])]
+      .some(v => (v || '').toLowerCase().includes(q));
+    const ess = !invEssOnly || it.essential;
+    return s && (!mf || it.material === mf) && (!bf || it.brand === bf) && (!tf || it.filamentType === tf) && ess;
+  });
+  items = applySort(items, invSort.col, invSort.dir, getInvVal);
+
+  const tb = document.getElementById('inv-tbody');
+  if (!items.length) {
+    const emp = !Object.keys(inventory).length;
+    tb.innerHTML = `<tr><td colspan="9"><div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <h3>${emp ? 'Vault is empty' : 'No results'}</h3>
+      <p>${emp ? 'Import a catalog and scan file to get started.' : 'Try adjusting your search or filters.'}</p>
+    </div></td></tr>`; return;
+  }
+
+  tb.innerHTML = items.map(it => {
+    const hex = colorHex(it.color), low = it.count <= 1;
+    const upcHtml = (it.upcs || []).map(u =>
+      `<span class="upc-pill ${orphanUpcs.has(u) ? 'orphan' : ''}">${u}</span>`
+    ).join('');
+    return `<tr>
+      <td style="padding:10px 8px 10px 14px;">
+        <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">
+          ${starIcon(it.essential)}
+        </button>
+      </td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td style="font-weight:600;color:var(--ink)">${it.name}</td>
+      <td style="color:var(--text3)">${it.brand}</td>
+      <td><span class="mat-chip">${it.material}</span></td>
+      <td>${it.filamentType ? `<span class="type-chip ${typeClass(it.filamentType)}">${it.filamentType}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td><div class="upc-list">${upcHtml || '<span style="color:var(--text3);font-size:11px;">—</span>'}</div></td>
+      <td><div class="cnt-group">
+        <button class="cnt-btn" onclick="adj('${it.filamentKey}',-1)">−</button>
+        <span class="cnt-val ${low ? 'low' : ''}">${it.count}</span>
+        <button class="cnt-btn" onclick="adj('${it.filamentKey}',1)">+</button>
+      </div></td>
+      <td><span class="loc-tag" onclick="openEdit('${it.filamentKey}')">${it.location || '—'}</span></td>
+      <td><button class="btn btn-g btn-sm" onclick="openEdit('${it.filamentKey}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+
+  updateSortHeaders('inv-tbody', invSort);
+
+  // Alert banner
+  const lows = Object.values(inventory).filter(i => i.count === 1);
+  const aa   = document.getElementById('alert-area');
+  if (lows.length) {
+    const ns = lows.slice(0,3).map(i => i.name).join(', ') + (lows.length > 3 ? ` +${lows.length-3} more` : '');
+    aa.innerHTML = `<div class="banner banner-amber"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><strong>Low Stock:</strong> ${ns} — only 1 spool remaining</div></div>`;
+  } else aa.innerHTML = '';
+}
+
+function adj(key, d) {
+  if (!inventory[key]) return;
+  inventory[key].count = Math.max(0, inventory[key].count + d);
+  if (inventory[key].count === 0) delete inventory[key];
+  updateStats(); renderInv(); sched();
+}
+
+// ════════════════════════════════════════════════
+// RENDER CATALOG
+// ════════════════════════════════════════════════
+function renderCatalog() {
+  const q  = document.getElementById('cq').value.toLowerCase();
+  const mf = document.getElementById('cf-mat').value;
+  const bf = document.getElementById('cf-brand').value;
+  const tf = document.getElementById('cf-type').value;
+
+  const mats   = [...new Set(Object.values(catalog).map(i => i.material).filter(Boolean))].sort();
+  const brands = [...new Set(Object.values(catalog).map(i => i.brand).filter(Boolean))].sort();
+  const types  = [...new Set(Object.values(catalog).map(i => i.filamentType).filter(Boolean))].sort();
+  rebuildSel('cf-mat', mf, mats, 'All Materials');
+  rebuildSel('cf-brand', bf, brands, 'All Brands');
+  rebuildSel('cf-type', tf, types, 'All Types');
+
+  const getCatVal = (it, col) => {
+    if (col === 'spools') return (inventory[it.filamentKey]?.count) || 0;
+    if (col === 'name')   return it.name || '';
+    if (col === 'color')  return it.color || '';
+    if (col === 'brand')  return it.brand || '';
+    if (col === 'material') return it.material || '';
+    if (col === 'filamentType') return it.filamentType || '';
+    return '';
+  };
+
+  // Count zero-stock entries for badge (before tab filter)
+  const allFiltered = Object.values(catalog).filter(it => {
+    const s = !q || [it.name, it.color, it.material, it.brand, it.filamentType, ...(it.upcs || [])]
+      .some(v => (v || '').toLowerCase().includes(q));
+    const ess = !catEssOnly || it.essential;
+    return s && (!mf || it.material === mf) && (!bf || it.brand === bf) && (!tf || it.filamentType === tf) && ess;
+  });
+  const zeroCount = allFiltered.filter(it => !(inventory[it.filamentKey]?.count)).length;
+  const zeroEl = document.getElementById('zero-count');
+  if (zeroEl) { zeroEl.textContent = zeroCount; zeroEl.style.display = zeroCount > 0 ? 'inline-block' : 'none'; }
+
+  // Apply tab filter
+  let items = catalogTab === 'zero'
+    ? allFiltered.filter(it => !(inventory[it.filamentKey]?.count))
+    : allFiltered;
+
+  items = applySort(items, catSort.col, catSort.dir, getCatVal);
+
+  document.getElementById('cat-sub').textContent = catalogTab === 'zero'
+    ? `${zeroCount} entries with no inventory`
+    : `${Object.keys(catalog).length} entries · ${Object.keys(upcIndex).length} UPCs indexed`;
+
+  const tb = document.getElementById('cat-tbody');
+  if (!items.length) {
+    const emp = !Object.keys(catalog).length;
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+      <h3>${emp ? 'Catalog is empty' : 'No results'}</h3>
+      <p>${emp ? 'Import a catalog CSV or add entries manually.' : 'Try adjusting your search or filters.'}</p>
+    </div></td></tr>`; return;
+  }
+
+  tb.innerHTML = items.map(it => {
+    const hex   = colorHex(it.color);
+    const inInv = inventory[it.filamentKey];
+    const invBadge = inInv
+      ? `<span style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);border-radius:5px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;">${inInv.count} spool${inInv.count !== 1 ? 's' : ''}</span>`
+      : `<span style="color:var(--text3);font-size:12px;">—</span>`;
+    const upcsHtml = (it.upcs || []).map(u => `<span class="upc-pill">${u}</span>`).join('');
+    return `<tr>
+      <td style="padding:10px 8px 10px 14px;">
+        <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">
+          ${starIcon(it.essential)}
+        </button>
+      </td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td style="color:var(--text2)">${it.brand}</td>
+      <td><span class="mat-chip">${it.material}</span></td>
+      <td>${it.filamentType ? `<span class="type-chip ${typeClass(it.filamentType)}">${it.filamentType}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-weight:500;color:var(--ink);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.name}</td>
+      <td><div class="upc-list">${upcsHtml || '—'}</div></td>
+      <td>${invBadge}</td>
+      <td><button class="btn btn-g btn-xs" onclick="openEditCatalog('${it.filamentKey}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+
+  updateSortHeaders('cat-tbody', catSort);
+}
+
+// ════════════════════════════════════════════════
+// STATS
+// ════════════════════════════════════════════════
+function updateStats() {
+  const items = Object.values(inventory);
+  const total     = items.reduce((s, i) => s + i.count, 0);
+  const filaments = items.length;
+  const mats      = new Set(items.map(i => i.material)).size;
+  const low       = items.filter(i => i.count === 1).length;
+  const catCt     = Object.keys(catalog).length;
+
+  document.getElementById('s-total').textContent    = total;
+  document.getElementById('s-filaments').textContent= filaments;
+  document.getElementById('s-mats').textContent     = mats;
+  document.getElementById('s-low').textContent      = low;
+  document.getElementById('h-total').textContent    = total;
+  document.getElementById('h-filaments').textContent= filaments;
+  document.getElementById('h-cat').textContent      = catCt;
+  document.getElementById('inv-sub').textContent    = `${total} total spools across ${filaments} unique filaments`;
+  document.getElementById('cat-sub').textContent    = `${catCt} entries · ${Object.keys(upcIndex).length} UPCs indexed`;
+}
+
+function updateBadge() {
+  const n = unmatched.length, b = document.getElementById('um-badge');
+  b.textContent = n; b.style.display = n > 0 ? 'inline' : 'none';
+  document.getElementById('um-sub').textContent = `${n} barcode${n !== 1 ? 's' : ''} from scan files with no catalog match`;
+}
+
+// ════════════════════════════════════════════════
+// MODAL: EDIT INVENTORY
+// ════════════════════════════════════════════════
+function openEdit(key) {
+  editKey = key;
+  const it = inventory[key];
+  editUpcList = [...(it.upcs || [])];
+  document.getElementById('m-title').textContent = it.name;
+  document.getElementById('m-sub').textContent   = `${it.material}${it.filamentType ? ' · ' + it.filamentType : ''} · ${it.brand}`;
+  document.getElementById('m-loc').value = it.location || '';
+  document.getElementById('m-cnt').value = it.count;
+  renderEditUpcList();
+  document.getElementById('ov-edit').classList.add('open');
+}
+
+function renderEditUpcList() {
+  const list = document.getElementById('upc-manager-list');
+  if (!editUpcList.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text3);">No UPCs linked</div>'; return; }
+  list.innerHTML = editUpcList.map((upc, i) => {
+    const inCat = !!upcIndex[upc];
+    return `<div class="upc-row">
+      <span class="upc-row-code">${upc}</span>
+      ${inCat ? `<span class="upc-row-badge">In catalog</span>` : `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--red);">Orphan</span>`}
+      <button class="btn btn-d btn-xs" onclick="removeEditUpc(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function addUpcToEntry() {
+  const val = document.getElementById('upc-add-val').value.trim().replace(/\D/g, '');
+  if (!val || editUpcList.includes(val)) return;
+  editUpcList.push(val);
+  // Also add to catalog index if we can
+  if (editKey && catalog[editKey] && !catalog[editKey].upcs.includes(val)) {
+    catalog[editKey].upcs.push(val);
+    upcIndex[val] = editKey;
+  }
+  document.getElementById('upc-add-val').value = '';
+  renderEditUpcList();
+}
+
+function removeEditUpc(i) {
+  const upc = editUpcList[i];
+  editUpcList.splice(i, 1);
+  // Remove from catalog and index only if it was pointing to this key
+  if (upcIndex[upc] === editKey) {
+    if (catalog[editKey]) catalog[editKey].upcs = catalog[editKey].upcs.filter(u => u !== upc);
+    delete upcIndex[upc];
+  }
+  renderEditUpcList();
+}
+
+function closeEdit() { document.getElementById('ov-edit').classList.remove('open'); editKey = null; }
+
+function saveEdit() {
+  if (!editKey || !inventory[editKey]) return;
+  inventory[editKey].location = document.getElementById('m-loc').value.trim();
+  inventory[editKey].count    = parseInt(document.getElementById('m-cnt').value) || 0;
+  inventory[editKey].upcs     = editUpcList;
+  if (inventory[editKey].count <= 0) delete inventory[editKey];
+  closeEdit(); updateStats(); renderInv(); renderOrphans(); sched();
+}
+
+function delEntry() {
+  if (!editKey) return;
+  delete inventory[editKey];
+  closeEdit(); updateStats(); renderInv(); sched();
+}
+
+// ════════════════════════════════════════════════
+// MODAL: ADD / EDIT CATALOG
+// ════════════════════════════════════════════════
+function openAddCatalog() {
+  catalogEditKey = null; ceUpcList = [];
+  document.getElementById('ce-title').textContent = 'Add Catalog Entry';
+  document.getElementById('ce-sub').textContent   = 'New filament SKU';
+  document.getElementById('ce-del-btn').style.display = 'none';
+  ['ce-brand','ce-mat','ce-color','ce-name'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ce-ftype').value = '';
+  renderCeUpcList();
+  document.getElementById('ov-catalog').classList.add('open');
+}
+
+function openEditCatalog(key) {
+  catalogEditKey = key;
+  const it = catalog[key];
+  ceUpcList = [...(it.upcs || [])];
+  document.getElementById('ce-title').textContent = 'Edit Catalog Entry';
+  document.getElementById('ce-sub').textContent   = `Key: ${key}`;
+  document.getElementById('ce-del-btn').style.display = 'inline-flex';
+  document.getElementById('ce-brand').value  = it.brand || '';
+  document.getElementById('ce-mat').value    = it.material || '';
+  document.getElementById('ce-ftype').value  = it.filamentType || '';
+  document.getElementById('ce-color').value  = it.color || '';
+  document.getElementById('ce-name').value   = it.name || '';
+  renderCeUpcList();
+  document.getElementById('ov-catalog').classList.add('open');
+}
+
+function renderCeUpcList() {
+  const list = document.getElementById('ce-upc-list');
+  if (!ceUpcList.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text3);">No UPCs yet — add at least one</div>'; return; }
+  list.innerHTML = ceUpcList.map((upc, i) => `
+    <div class="upc-row">
+      <span class="upc-row-code">${upc}</span>
+      <button class="btn btn-d btn-xs" onclick="removeCeUpc(${i})">×</button>
+    </div>`).join('');
+}
+
+function addCatalogUpc() {
+  const val = document.getElementById('ce-upc-add').value.trim().replace(/\D/g, '');
+  if (!val || ceUpcList.includes(val)) return;
+  ceUpcList.push(val);
+  document.getElementById('ce-upc-add').value = '';
+  renderCeUpcList();
+}
+
+function removeCeUpc(i) { ceUpcList.splice(i, 1); renderCeUpcList(); }
+
+function closeCatalogModal() { document.getElementById('ov-catalog').classList.remove('open'); catalogEditKey = null; }
+
+function saveCatalogEntry() {
+  const brand        = document.getElementById('ce-brand').value.trim();
+  const material     = document.getElementById('ce-mat').value.trim().toUpperCase();
+  const filamentType = document.getElementById('ce-ftype').value.trim();
+  const color        = document.getElementById('ce-color').value.trim();
+  const nameIn       = document.getElementById('ce-name').value.trim();
+  const name         = nameIn || buildName(brand, material, filamentType, color);
+
+  if (!brand || !material || !color) { toast('Brand, Material and Color are required'); return; }
+
+  const newKey = makeKey(brand, material, filamentType, color);
+
+  // Remove old UPCs from index if editing
+  if (catalogEditKey && catalog[catalogEditKey]) {
+    catalog[catalogEditKey].upcs.forEach(upc => { if (upcIndex[upc] === catalogEditKey) delete upcIndex[upc]; });
+  }
+
+  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false };
+  catalog[newKey] = entry;
+
+  // Rename inventory key if identity changed
+  if (catalogEditKey && catalogEditKey !== newKey && inventory[catalogEditKey]) {
+    inventory[newKey] = { ...inventory[catalogEditKey], filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList };
+    delete inventory[catalogEditKey];
+  } else if (inventory[newKey]) {
+    // Update existing inventory entry's metadata
+    Object.assign(inventory[newKey], { brand, material, filamentType, color, name });
+  }
+
+  // Re-index all UPCs
+  ceUpcList.forEach(upc => { upcIndex[upc] = newKey; });
+
+  closeCatalogModal(); rebuildUpcIndex();
+  updateStats(); renderCatalog(); renderInv(); renderOrphans(); sched();
+  toast(catalogEditKey ? 'Catalog entry updated' : 'Entry added to catalog');
+}
+
+function deleteCatalogEntry() {
+  if (!catalogEditKey || !catalog[catalogEditKey]) return;
+  const it    = catalog[catalogEditKey];
+  const inInv = inventory[catalogEditKey];
+  const msg   = inInv
+    ? `Delete "${it.name}" from catalog?\n\n⚠ This filament has ${inInv.count} spool(s) in inventory. The inventory entry will become an orphan.`
+    : `Delete "${it.name}" from catalog?`;
+  if (!confirm(msg)) return;
+  it.upcs.forEach(upc => { if (upcIndex[upc] === catalogEditKey) delete upcIndex[upc]; });
+  delete catalog[catalogEditKey];
+  closeCatalogModal();
+  updateStats(); renderCatalog(); renderInv(); renderOrphans(); sched();
+  toast('Catalog entry deleted');
+}
+
+// ════════════════════════════════════════════════
+// UNMATCHED
+// ════════════════════════════════════════════════
+function renderUnmatched() {
+  const w = document.getElementById('um-wrap');
+  if (!unmatched.length) {
+    w.innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><h3>All clear</h3><p>Every scanned barcode matched the catalog.</p></div>`;
+    return;
+  }
+  w.innerHTML = `<div class="um-list">${unmatched.map(({ upc, count }) => `
+    <div class="um-row">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);flex:1;font-weight:500">${upc}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">×${count} spool${count > 1 ? 's' : ''}</span>
+      <button class="btn btn-g btn-sm" onclick="openResolve('${upc}')">Resolve</button>
+      <button class="btn btn-d btn-sm" onclick="dismiss('${upc}')">Dismiss</button>
+    </div>`).join('')}</div>`;
+}
+
+function dismiss(upc) { unmatched = unmatched.filter(u => u.upc !== upc); updateBadge(); renderUnmatched(); sched(); }
+
+function openResolve(upc) {
+  resolveUpc = upc;
+  document.getElementById('rv-upc').textContent = `UPC: ${upc}`;
+  document.getElementById('rv-brand').value = 'Bambu Lab';
+  ['rv-mat','rv-col','rv-name'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('rv-ftype').value = '';
+  document.getElementById('ov-resolve').classList.add('open');
+}
+function closeResolve() { document.getElementById('ov-resolve').classList.remove('open'); resolveUpc = null; }
+function saveResolve() {
+  if (!resolveUpc) return;
+  const brand        = document.getElementById('rv-brand').value.trim();
+  const material     = document.getElementById('rv-mat').value.trim().toUpperCase();
+  const filamentType = document.getElementById('rv-ftype').value.trim();
+  const color        = document.getElementById('rv-col').value.trim();
+  const name         = document.getElementById('rv-name').value.trim() || buildName(brand, material, filamentType, color);
+  const obj          = unmatched.find(u => u.upc === resolveUpc);
+  const count        = obj ? obj.count : 1;
+  const key          = makeKey(brand, material, filamentType, color);
+
+  if (!catalog[key]) catalog[key] = { filamentKey: key, brand, material, filamentType, color, name, upcs: [resolveUpc] };
+  else if (!catalog[key].upcs.includes(resolveUpc)) catalog[key].upcs.push(resolveUpc);
+  upcIndex[resolveUpc] = key;
+
+  if (!inventory[key]) inventory[key] = { filamentKey: key, brand, material, filamentType, color, name, upcs: [resolveUpc], count: 0, location: '' };
+  else if (!inventory[key].upcs.includes(resolveUpc)) inventory[key].upcs.push(resolveUpc);
+  inventory[key].count += count;
+
+  unmatched = unmatched.filter(u => u.upc !== resolveUpc);
+  closeResolve(); updateStats(); updateBadge(); renderUnmatched(); renderInv(); renderCatalog(); sched();
+}
+
+// ════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════
+async function exportInventoryCSV() {
+  const rows = [['Brand','Material','FilamentType','Color','Name','UPCs','Spools','Location']];
+  Object.values(inventory).sort((a,b) => a.name.localeCompare(b.name)).forEach(i =>
+    rows.push([i.brand, i.material, i.filamentType||'', i.color, i.name, (i.upcs||[]).join(' | '), i.count, i.location||''])
+  );
+  await doExport(toCSV(rows), 'filament-vault-inventory.csv');
+}
+
+async function exportCatalogCSV() {
+  const rows = [['UPC','Brand','Material','FilamentType','Color','Name']];
+  Object.values(catalog).sort((a,b) => a.name.localeCompare(b.name)).forEach(cat => {
+    // One row per UPC so re-importing works cleanly
+    (cat.upcs.length ? cat.upcs : ['']).forEach(upc =>
+      rows.push([upc, cat.brand, cat.material, cat.filamentType||'', cat.color, cat.name])
+    );
+  });
+  await doExport(toCSV(rows), 'filament-vault-catalog.csv');
+}
+
+async function doExport(csv, filename) {
+  if (window.electronAPI) {
+    const res = await window.electronAPI.saveExportDialog(csv);
+    if (res?.success) toast(`Exported: ${res.filePath.split('/').pop()}`);
+  } else {
+    dlFile(filename, csv, 'text/csv');
+    toast(`Downloaded: ${filename}`);
+  }
+}
+
+function toCSV(rows) {
+  return rows.map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+}
+
+function dlCat() {
+  dlFile('sample-catalog.csv',
+    `UPC,Brand,Material,Type,Color\n` +
+    `6949614921234,Bambu Lab,PLA,Matte,Bambu Green\n6949614921235,Bambu Lab,PLA,Basic,Jade White\n` +
+    `6949614921236,Bambu Lab,PLA,Silk,Lemon Yellow\n6949614921237,Bambu Lab,PETG,Basic,Black\n` +
+    `6949614921238,Bambu Lab,PETG,Translucent,Translucent Blue\n6949614921239,Bambu Lab,ABS,Basic,Charcoal\n` +
+    `6949614921240,Bambu Lab,TPU,Basic,White\n6949614921241,Bambu Lab,PA-CF,Carbon,Natural`, 'text/csv');
+}
+function dlScans() {
+  dlFile('sample-scans.txt',
+    '6949614921234\n6949614921234\n6949614921235\n6949614921237\n' +
+    '6949614921238\n6949614921238\n6949614921238\n6949614923999\n6949614921239', 'text/plain');
+}
+function dlFile(n, c, t) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c],{type:t})); a.download = n; a.click(); }
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function rebuildSel(id, cur, values, placeholder) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<option value="">${placeholder}</option>` +
+    values.map(v => `<option value="${v}" ${v === cur ? 'selected' : ''}>${v}</option>`).join('');
+}
+
+function typeClass(t) {
+  const map = { Basic:'basic',Matte:'matte',Silk:'silk',Translucent:'translucent',
+    Sparkle:'sparkle',Marble:'marble',Wood:'wood',Carbon:'carbon',Gradient:'gradient',Other:'other' };
+  return map[t] || 'other';
+}
+
+function setRes(id, t, msg) { const el = document.getElementById(id); el.textContent = msg; el.className = `res-msg ${t}`; }
+
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg;
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function colorHex(name) {
+  if (!name) return '#E8EAEE'; const n = name.toLowerCase();
+  const m = {'black':'#2A2D35','white':'#F5F5F5','red':'#D94040','blue':'#3B72D4','green':'#2A8C50',
+    'yellow':'#E8C327','orange':'#E07830','purple':'#7B4DC8','pink':'#D45F8A','grey':'#9098AA',
+    'gray':'#9098AA','silver':'#B0B6C2','gold':'#C8A840','brown':'#8B5E3C','teal':'#0E8080',
+    'cyan':'#2AB0C0','magenta':'#C83288','bamboo':'#0E7C6B','jade':'#3A9E60','natural':'#C8BC9A',
+    'translucent':'#7AAEC8','transparent':'#7AAEC8','charcoal':'#4A4E5E','lemon':'#D4C820',
+    'sky':'#5BA8D8','navy':'#1E3A6E','maroon':'#8B2222','cf':'#3A3E4A','carbon':'#3A3E4A'};
+  for (const [k, v] of Object.entries(m)) { if (n.includes(k)) return v; }
+  let h = 0; for (let i = 0; i < name.length; i++) h = ((h<<5)-h)+name.charCodeAt(i);
+  return `hsl(${Math.abs(h) % 360},40%,55%)`;
+}
+
+// Close modals on overlay click / Escape
+['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === e.currentTarget) {
+      if (id === 'ov-edit')     closeEdit();
+      if (id === 'ov-catalog')  closeCatalogModal();
+      if (id === 'ov-resolve')  closeResolve();
+      if (id === 'ov-orphan')   closeOrphanModal();
+      if (id === 'ov-clear')    closeClearModal();
+    }
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); }
+});
+
+init();
+</script>
+</body>
+</html>
