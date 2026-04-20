@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Filament Vault</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg:#F7F8FA; --surface:#FFFFFF; --surface2:#F2F3F6; --surface3:#EAECF0;
@@ -236,6 +237,31 @@
   .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:10px 16px;border-radius:9px;font-size:13px;z-index:9999;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(8px);transition:all .2s ease;pointer-events:none;}
   .toast.show{opacity:1;transform:translateY(0);}
 
+  /* AUTH OVERLAY */
+  .auth-ov{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .auth-ov.hidden{display:none;}
+  .auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 28px;box-shadow:var(--shadow-lg);}
+  .auth-logo{width:52px;height:52px;background:var(--ink);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .auth-logo svg{width:28px;height:28px;}
+  .auth-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--ink);text-align:center;letter-spacing:-0.02em;}
+  .auth-title span{color:var(--teal-mid);}
+  .auth-sub{font-size:13px;color:var(--text3);text-align:center;margin:6px 0 24px;line-height:1.55;}
+  .auth-msg{display:none;margin-top:14px;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;}
+  .auth-msg.ok{display:block;background:var(--teal-light);border:1px solid var(--teal-border);color:var(--teal);}
+  .auth-msg.err{display:block;background:var(--red-light);border:1px solid var(--red-border);color:var(--red);}
+  .auth-msg.info{display:block;background:var(--amber-light);border:1px solid var(--amber-border);color:var(--amber);}
+  .auth-or{display:flex;align-items:center;gap:10px;margin:18px 0 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.12em;}
+  .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--border);}
+  .auth-local-btn{width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Figtree',sans-serif;font-size:12px;cursor:pointer;transition:all .12s;}
+  .auth-local-btn:hover{color:var(--text);background:var(--surface3);}
+
+  /* USER BADGE */
+  .user-badge{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 11px;-webkit-app-region:no-drag;}
+  .user-email{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-signout{border:none;background:var(--surface);color:var(--text3);cursor:pointer;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;}
+  .user-signout:hover{color:var(--red);background:var(--red-light);}
+  .user-signout svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.2;}
+
   /* HAMBURGER + WEB MODE */
   .hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text2);margin-right:10px;flex-shrink:0;-webkit-app-region:no-drag;}
   .hamburger svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;}
@@ -304,6 +330,12 @@
       <div class="tb-stat">
         <span class="tb-dot"></span>
         <span id="h-total">0</span>&thinsp;spools&thinsp;·&thinsp;<span id="h-filaments">0</span>&thinsp;filaments&thinsp;·&thinsp;<span id="h-cat">0</span>&thinsp;catalog
+      </div>
+      <div class="user-badge" id="user-badge" style="display:none;">
+        <span class="user-email" id="user-email"></span>
+        <button class="user-signout" onclick="signOut()" aria-label="Sign out" title="Sign out">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -561,6 +593,26 @@
 
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
+<!-- ══ AUTH OVERLAY: sign-in / magic link ══ -->
+<div class="auth-ov hidden" id="auth-ov">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 2v20M3 7l9 5 9-5" stroke="white" stroke-width="1.6" stroke-linejoin="round" opacity=".4"/></svg>
+    </div>
+    <div class="auth-title">Filament <span>Vault</span></div>
+    <div class="auth-sub">Sign in to sync your inventory across devices. We'll email you a one-click sign-in link.</div>
+    <label class="f-label">Email</label>
+    <input class="f-input" type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')sendMagicLink()">
+    <button class="btn btn-p" onclick="sendMagicLink()" style="width:100%;justify-content:center;margin-top:4px;" id="auth-send-btn">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Send magic link
+    </button>
+    <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-or">OR</div>
+    <button class="auth-local-btn" onclick="continueLocalOnly()">Continue without signing in (this device only)</button>
+  </div>
+</div>
+
 <!-- ══ MODAL: Edit Inventory Entry ══ -->
 <div class="overlay" id="ov-edit">
   <div class="modal">
@@ -767,8 +819,161 @@ const webAPI = {
   // Native save dialog isn't available in the browser — callers fall back to dlFile()
   saveExportDialog: async () => null,
 };
-const api = window.electronAPI || webAPI;
+// ──────────────────────────────────────────────
+// Supabase: cloud sync across devices (optional)
+// ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
+const sb = (window.supabase && !window.electronAPI)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+    })
+  : null;
+
+let currentUser = null;
+
+const supabaseAPI = {
+  loadData: async () => {
+    if (!currentUser) return null;
+    const { data, error } = await sb.from('vault')
+      .select('data').eq('user_id', currentUser.id).maybeSingle();
+    if (error) { console.error('vault load', error); return null; }
+    if (!data) {
+      await sb.from('vault').insert({ user_id: currentUser.id, data: {} });
+      return null;
+    }
+    return data.data;
+  },
+  saveData: async (d) => {
+    if (!currentUser) return { success: false, error: 'not signed in' };
+    const { error } = await sb.from('vault').upsert({
+      user_id: currentUser.id, data: d, updated_at: new Date().toISOString()
+    });
+    if (error) { console.error('vault save', error); return { success: false, error: error.message }; }
+    return { success: true };
+  },
+  getDataPath: async () => 'Supabase · ' + (currentUser?.email || ''),
+  openFileDialog: webAPI.openFileDialog,
+  saveExportDialog: webAPI.saveExportDialog,
+};
+
+// Active API — rebound when auth state changes
+let api = window.electronAPI || webAPI;
 if (!window.electronAPI) document.body.classList.add('web');
+
+// ── Auth UI helpers ──
+function showAuthOverlay() { document.getElementById('auth-ov').classList.remove('hidden'); }
+function hideAuthOverlay() { document.getElementById('auth-ov').classList.add('hidden'); }
+function setAuthMsg(t, msg) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = msg; el.className = 'auth-msg ' + t;
+}
+
+async function sendMagicLink() {
+  if (!sb) return;
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email || !email.includes('@')) { setAuthMsg('err', 'Enter a valid email address.'); return; }
+  const btn = document.getElementById('auth-send-btn');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  setAuthMsg('info', 'Sending…');
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  btn.disabled = false; btn.style.opacity = '';
+  if (error) { setAuthMsg('err', error.message); return; }
+  setAuthMsg('ok', `Check ${email} for a one-click sign-in link. You can close this tab — the link will bring you back.`);
+}
+
+function continueLocalOnly() {
+  localStorage.setItem('fv-local-only', '1');
+  hideAuthOverlay();
+  api = webAPI;
+  init();
+}
+
+async function signOut() {
+  if (!sb) return;
+  await sb.auth.signOut();
+  // auth state change handler will take it from here
+}
+
+function updateUserBadge() {
+  const badge = document.getElementById('user-badge');
+  if (currentUser) {
+    document.getElementById('user-email').textContent = currentUser.email;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Merge local inventory into cloud on first sign-in (if cloud is empty)
+async function migrateLocalToCloudIfNeeded() {
+  const cloud = await supabaseAPI.loadData();
+  const cloudEmpty = !cloud || (
+    Object.keys(cloud.catalog || {}).length === 0 &&
+    Object.keys(cloud.inventory || {}).length === 0
+  );
+  if (!cloudEmpty) return cloud;
+  const local = await webAPI.loadData();
+  const localHasData = local && (
+    Object.keys(local.catalog || {}).length > 0 ||
+    Object.keys(local.inventory || {}).length > 0
+  );
+  if (localHasData) {
+    await supabaseAPI.saveData(local);
+    return local;
+  }
+  return cloud;
+}
+
+async function onSignedIn(user) {
+  currentUser = user;
+  api = supabaseAPI;
+  localStorage.removeItem('fv-local-only');
+  hideAuthOverlay();
+  updateUserBadge();
+  const data = await migrateLocalToCloudIfNeeded();
+  catalog   = data?.catalog   || {};
+  inventory = data?.inventory || {};
+  upcIndex  = data?.upcIndex  || {};
+  unmatched = data?.unmatched || {};
+  if (data) migrateOldData(data);
+  rebuildUpcIndex();
+  document.getElementById('dp').textContent = await api.getDataPath();
+  renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
+  updateStats(); updateBadge();
+}
+
+function onSignedOut() {
+  currentUser = null;
+  api = webAPI;
+  updateUserBadge();
+  showAuthOverlay();
+}
+
+async function bootstrapAuth() {
+  // Electron: skip auth entirely
+  if (window.electronAPI) { init(); return; }
+  // User previously chose local-only: skip auth
+  if (localStorage.getItem('fv-local-only') === '1') { init(); return; }
+  // Supabase SDK failed to load: fall back to local
+  if (!sb) { init(); return; }
+
+  // Listen for auth state changes (magic-link redirect completes here too)
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session?.user) onSignedIn(session.user);
+    else if (event === 'SIGNED_OUT') onSignedOut();
+  });
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    await onSignedIn(session.user);
+  } else {
+    showAuthOverlay();
+  }
+}
 
 function toggleSidebar() {
   document.querySelector('.sidebar').classList.toggle('open');
@@ -1870,7 +2075,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); }
 });
 
-init();
+bootstrapAuth();
 </script>
 </body>
 </html>
