@@ -928,7 +928,10 @@ async function migrateLocalToCloudIfNeeded() {
   return cloud;
 }
 
+let signInDone = false;
 async function onSignedIn(user) {
+  if (signInDone && currentUser?.id === user.id) return;  // de-dupe concurrent fires
+  signInDone = true;
   currentUser = user;
   api = supabaseAPI;
   localStorage.removeItem('fv-local-only');
@@ -938,16 +941,19 @@ async function onSignedIn(user) {
   catalog   = data?.catalog   || {};
   inventory = data?.inventory || {};
   upcIndex  = data?.upcIndex  || {};
-  unmatched = data?.unmatched || {};
+  unmatched = Array.isArray(data?.unmatched) ? data.unmatched : [];
   if (data) migrateOldData(data);
   rebuildUpcIndex();
   document.getElementById('dp').textContent = await api.getDataPath();
+  console.log('[vault] loaded',
+    { catalog: Object.keys(catalog).length, inventory: Object.keys(inventory).length, unmatched: unmatched.length });
   renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
   updateStats(); updateBadge();
 }
 
 function onSignedOut() {
   currentUser = null;
+  signInDone = false;
   api = webAPI;
   updateUserBadge();
   showAuthOverlay();
@@ -1168,8 +1174,17 @@ function sched() {
   pip.className = 'save-pip saving'; txt.textContent = 'Saving…';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    await api.saveData({ catalog, inventory, upcIndex, unmatched });
-    pip.className = 'save-pip'; txt.textContent = 'Saved';
+    const res = await api.saveData({ catalog, inventory, upcIndex, unmatched });
+    if (res && res.success === false) {
+      pip.style.background = 'var(--red)';
+      txt.textContent = 'Save failed';
+      console.error('[vault] save failed', res.error);
+      toast('Save failed: ' + (res.error || 'unknown') + ' — check console');
+    } else {
+      pip.style.background = '';
+      pip.className = 'save-pip';
+      txt.textContent = 'Saved';
+    }
   }, 800);
 }
 
