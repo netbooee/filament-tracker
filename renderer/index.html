@@ -313,6 +313,46 @@
     .page-head > div:last-child{width:100%;}
     .page-head > div:last-child .btn{flex:1;justify-content:center;}
   }
+
+  /* ── BOTTOM NAV (mobile only) ───────────────────────────────────────────── */
+  .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:400;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+  .bn-inner{display:flex;align-items:stretch;height:58px;}
+  .bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;color:var(--text3);font-family:'Figtree',sans-serif;font-size:10px;font-weight:500;cursor:pointer;transition:color .13s;padding:0;}
+  .bn-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;}
+  .bn-btn.active{color:var(--teal);}
+  .bn-more-sheet{display:none;position:fixed;inset:0;z-index:500;}
+  .bn-more-backdrop{position:absolute;inset:0;background:rgba(17,19,24,.4);}
+  .bn-more-panel{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-radius:16px 16px 0 0;padding:12px 0 calc(16px + env(safe-area-inset-bottom));box-shadow:var(--shadow-lg);}
+  .bn-more-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+  .bn-more-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;color:var(--text);border:none;background:transparent;width:100%;cursor:pointer;text-align:left;}
+  .bn-more-item svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;color:var(--text2);}
+  .bn-more-item.danger{color:var(--red);}
+  .bn-more-item.danger svg{color:var(--red);}
+  .bn-more-sheet.open{display:block;}
+
+  /* ── MOBILE INVENTORY & CATALOG CARDS ──────────────────────────────────── */
+  .m-card-list{flex-direction:column;gap:10px;}
+  .m-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 14px 12px;box-shadow:var(--shadow-sm);}
+  .m-card.low-stock{border-color:var(--red-border);}
+  .m-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+  .m-swatch{width:38px;height:38px;border-radius:8px;flex-shrink:0;border:1px solid rgba(0,0,0,.08);}
+  .m-card-info{flex:1;min-width:0;}
+  .m-card-name{font-weight:600;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .m-card-meta{font-size:11.5px;color:var(--text3);margin-top:2px;}
+  .m-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .m-card-loc{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+  .m-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .m-inv-badge{background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);border-radius:5px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
+
+  /* ── IS-MOBILE OVERRIDES ────────────────────────────────────────────────── */
+  body.is-mobile .sidebar{display:none!important;}
+  body.is-mobile .hamburger{display:none!important;}
+  body.is-mobile .bottom-nav{display:flex;flex-direction:column;}
+  body.is-mobile .main{padding-bottom:80px;}
+  body.is-mobile .table-wrap{display:none;}
+  body.is-mobile .m-card-list{display:flex;}
+  body:not(.is-mobile) .m-card-list{display:none;}
+  body:not(.is-mobile) .bottom-nav{display:none!important;}
 </style>
 </head>
 <body>
@@ -428,6 +468,7 @@
             </table>
           </div>
         </div>
+        <div class="m-card-list" id="inv-cards"></div>
       </div>
 
       <!-- ════════ CATALOG ════════ -->
@@ -485,6 +526,7 @@
             </table>
           </div>
         </div>
+        <div class="m-card-list" id="cat-cards"></div>
       </div>
 
       <!-- ════════ ORPHANED UPCs ════════ -->
@@ -590,6 +632,52 @@
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV (mobile) ══ -->
+<nav class="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-btn active" id="bn-inventory" onclick="showView('inventory')">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Inventory
+    </button>
+    <button class="bn-btn" id="bn-catalog" onclick="showView('catalog')">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Catalog
+    </button>
+    <button class="bn-btn" id="bn-import" onclick="showView('import')">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Import
+    </button>
+    <button class="bn-btn" id="bn-more" onclick="openMobileMore()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      More
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MOBILE MORE SHEET ══ -->
+<div class="bn-more-sheet" id="bn-more-sheet">
+  <div class="bn-more-backdrop" onclick="closeMobileMore()"></div>
+  <div class="bn-more-panel">
+    <div class="bn-more-handle"></div>
+    <button class="bn-more-item" onclick="showView('orphans');closeMobileMore()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Orphaned UPCs
+    </button>
+    <button class="bn-more-item" onclick="showView('unmatched');closeMobileMore()">
+      <svg viewBox="0 0 24 24"><path d="M8.56 2.9A7 7 0 1120.54 15"/><path d="M3.34 7a10 10 0 0017.32 10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      Unmatched Scans
+    </button>
+    <button class="bn-more-item" onclick="exportInventoryCSV();closeMobileMore()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Inventory
+    </button>
+    <button class="bn-more-item danger" onclick="confirmClearInventory();closeMobileMore()">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      Clear Inventory
+    </button>
   </div>
 </div>
 
@@ -765,6 +853,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Mobile detection ──────────────────────────────────────────────────────────
+const isMobile = /android|webos|iphone|ipad|ipod|blackberry|windows phone/i.test(navigator.userAgent) || window.innerWidth <= 768;
+if (isMobile) document.body.classList.add('is-mobile');
+
 // ════════════════════════════════════════════════
 // DATA MODEL
 //
@@ -1210,6 +1302,11 @@ function showView(n, el) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + n).classList.add('active');
   if (el) el.classList.add('active');
+  // Sync bottom nav
+  ['inventory','catalog','import'].forEach(id => {
+    const btn = document.getElementById('bn-' + id);
+    if (btn) btn.classList.toggle('active', id === n);
+  });
   if (n === 'inventory') renderInv();
   if (n === 'catalog')   renderCatalog();
   if (n === 'orphans')   renderOrphans();
@@ -1217,6 +1314,9 @@ function showView(n, el) {
   closeSidebarOnMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function openMobileMore()  { document.getElementById('bn-more-sheet').classList.add('open'); }
+function closeMobileMore() { document.getElementById('bn-more-sheet').classList.remove('open'); }
 
 // ════════════════════════════════════════════════
 // FILE I/O
@@ -1609,6 +1709,54 @@ function renderInv() {
   });
   items = applySort(items, invSort.col, invSort.dir, getInvVal);
 
+  // ── Mobile: render cards ──
+  if (isMobile) {
+    const container = document.getElementById('inv-cards');
+    if (!items.length) {
+      const emp = !Object.keys(inventory).length;
+      container.innerHTML = `<div class="empty">
+        <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <h3>${emp ? 'Vault is empty' : 'No results'}</h3>
+        <p>${emp ? 'Import a catalog and scan file to get started.' : 'Try adjusting your search or filters.'}</p>
+      </div>`;
+    } else {
+      container.innerHTML = items.map(it => {
+        const hex = colorHex(it.color), low = it.count <= 1;
+        const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
+        return `<div class="m-card${low ? ' low-stock' : ''}">
+          <div class="m-card-head">
+            <div class="m-swatch" style="background:${hex}"></div>
+            <div class="m-card-info">
+              <div class="m-card-name">${it.name}</div>
+              <div class="m-card-meta">${meta}</div>
+            </div>
+            <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">${starIcon(it.essential)}</button>
+          </div>
+          <div class="m-card-foot">
+            <span class="m-card-loc" onclick="openEdit('${it.filamentKey}')">${it.location || 'No location'}</span>
+            <div class="m-card-actions">
+              <div class="cnt-group">
+                <button class="cnt-btn" onclick="adj('${it.filamentKey}',-1)">−</button>
+                <span class="cnt-val${low ? ' low' : ''}">${it.count}</span>
+                <button class="cnt-btn" onclick="adj('${it.filamentKey}',1)">+</button>
+              </div>
+              <button class="btn btn-g btn-sm" onclick="openEdit('${it.filamentKey}')">Edit</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    // Alert banner
+    const lows = Object.values(inventory).filter(i => i.count === 1);
+    const aa = document.getElementById('alert-area');
+    if (lows.length) {
+      const ns = lows.slice(0,3).map(i => i.name).join(', ') + (lows.length > 3 ? ` +${lows.length-3} more` : '');
+      aa.innerHTML = `<div class="banner banner-amber"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><strong>Low Stock:</strong> ${ns} — only 1 spool remaining</div></div>`;
+    } else aa.innerHTML = '';
+    return;
+  }
+
+  // ── Desktop: render table ──
   const tb = document.getElementById('inv-tbody');
   if (!items.length) {
     const emp = !Object.keys(inventory).length;
@@ -1712,6 +1860,44 @@ function renderCatalog() {
     ? `${zeroCount} entries with no inventory`
     : `${Object.keys(catalog).length} entries · ${Object.keys(upcIndex).length} UPCs indexed`;
 
+  // ── Mobile: render cards ──
+  if (isMobile) {
+    const container = document.getElementById('cat-cards');
+    if (!items.length) {
+      const emp = !Object.keys(catalog).length;
+      container.innerHTML = `<div class="empty">
+        <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+        <h3>${emp ? 'Catalog is empty' : 'No results'}</h3>
+        <p>${emp ? 'Import a catalog CSV or add entries manually.' : 'Try adjusting your search or filters.'}</p>
+      </div>`;
+    } else {
+      container.innerHTML = items.map(it => {
+        const hex = colorHex(it.color);
+        const inInv = inventory[it.filamentKey];
+        const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
+        const invBadge = inInv
+          ? `<span class="m-inv-badge">${inInv.count} spool${inInv.count !== 1 ? 's' : ''}</span>`
+          : `<span style="color:var(--text3);font-size:12px;">Not in inventory</span>`;
+        return `<div class="m-card">
+          <div class="m-card-head">
+            <div class="m-swatch" style="background:${hex}"></div>
+            <div class="m-card-info">
+              <div class="m-card-name">${it.name}</div>
+              <div class="m-card-meta">${meta}</div>
+            </div>
+            <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">${starIcon(it.essential)}</button>
+          </div>
+          <div class="m-card-foot">
+            ${invBadge}
+            <button class="btn btn-g btn-sm" onclick="openEditCatalog('${it.filamentKey}')">Edit</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    return;
+  }
+
+  // ── Desktop: render table ──
   const tb = document.getElementById('cat-tbody');
   if (!items.length) {
     const emp = !Object.keys(catalog).length;
