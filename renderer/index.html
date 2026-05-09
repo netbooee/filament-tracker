@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filament Vault">
+<meta name="theme-color" content="#1D2130">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Filament Vault</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -344,6 +349,12 @@
   .m-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .m-inv-badge{background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);border-radius:5px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
 
+  /* ── MOBILE SORT BAR ───────────────────────────────────────────────────── */
+  .m-sort-bar{display:none;align-items:center;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .m-sort-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;}
+  .m-sort-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:'Figtree',sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .13s;}
+  .m-sort-btn.active{background:var(--teal-light);color:var(--teal);border-color:var(--teal-border);}
+
   /* ── IS-MOBILE OVERRIDES ────────────────────────────────────────────────── */
   body.is-mobile .sidebar{display:none!important;}
   body.is-mobile .hamburger{display:none!important;}
@@ -351,7 +362,9 @@
   body.is-mobile .main{padding-bottom:80px;}
   body.is-mobile .table-wrap{display:none;}
   body.is-mobile .m-card-list{display:flex;}
+  body.is-mobile .m-sort-bar{display:flex;}
   body:not(.is-mobile) .m-card-list{display:none;}
+  body:not(.is-mobile) .m-sort-bar{display:none!important;}
   body:not(.is-mobile) .bottom-nav{display:none!important;}
 </style>
 </head>
@@ -468,6 +481,14 @@
             </table>
           </div>
         </div>
+        <div class="m-sort-bar" id="inv-sort-bar">
+          <span class="m-sort-label">Sort:</span>
+          <button class="m-sort-btn active" id="msort-inv-count" onclick="mobileSort('inv','count')">Spools</button>
+          <button class="m-sort-btn" id="msort-inv-name" onclick="mobileSort('inv','name')">Name</button>
+          <button class="m-sort-btn" id="msort-inv-color" onclick="mobileSort('inv','color')">Color</button>
+          <button class="m-sort-btn" id="msort-inv-brand" onclick="mobileSort('inv','brand')">Brand</button>
+          <button class="m-sort-btn" id="msort-inv-material" onclick="mobileSort('inv','material')">Material</button>
+        </div>
         <div class="m-card-list" id="inv-cards"></div>
       </div>
 
@@ -526,6 +547,14 @@
             </table>
           </div>
         </div>
+        <div class="m-sort-bar" id="cat-sort-bar">
+          <span class="m-sort-label">Sort:</span>
+          <button class="m-sort-btn active" id="msort-cat-spools" onclick="mobileSort('cat','spools')">Spools</button>
+          <button class="m-sort-btn" id="msort-cat-name" onclick="mobileSort('cat','name')">Name</button>
+          <button class="m-sort-btn" id="msort-cat-color" onclick="mobileSort('cat','color')">Color</button>
+          <button class="m-sort-btn" id="msort-cat-brand" onclick="mobileSort('cat','brand')">Brand</button>
+          <button class="m-sort-btn" id="msort-cat-material" onclick="mobileSort('cat','material')">Material</button>
+        </div>
         <div class="m-card-list" id="cat-cards"></div>
       </div>
 
@@ -552,6 +581,52 @@
         </div>
         <div class="import-grid">
           <div class="card">
+            <div class="card-title">UPC Scan or Paste</div>
+            <div class="card-desc">Upload a <code>.txt</code> file, use a hand scanner, or paste UPCs directly below — one per line. Duplicates add +1 spool each.</div>
+
+            <!-- Mode toggle -->
+            <div class="tab-bar" style="margin-bottom:12px;">
+              <button class="tab-btn active" id="scan-tab-file"  onclick="setScanMode('file')">Upload File</button>
+              <button class="tab-btn"        id="scan-tab-paste" onclick="setScanMode('paste')">Paste UPCs or Use Scanner</button>
+            </div>
+
+            <!-- File upload mode -->
+            <div id="scan-mode-file">
+              <div class="drop-zone" id="dz-s" onclick="openFile('scan')"
+                ondragover="dzo(event,'dz-s')" ondragleave="dzl('dz-s')" ondrop="dzd(event,'scan')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
+                <p><strong>Click to browse</strong> or drag &amp; drop</p>
+                <p class="hint">.txt · one UPC per line</p>
+              </div>
+            </div>
+
+            <!-- Paste / Scanner mode -->
+            <div id="scan-mode-paste" style="display:none;">
+              <textarea id="paste-upcs"
+                placeholder="Use scanner or paste UPC's here — one per line:&#10;6949614921234&#10;6949614921235&#10;..."
+                style="width:100%;height:130px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;line-height:1.6;transition:border-color .15s;"
+                onfocus="this.style.borderColor='var(--teal-mid)'"
+                onblur="this.style.borderColor='var(--border)'"
+              ></textarea>
+              <button class="btn btn-p" onclick="processPastedScans()" style="margin-top:8px;width:100%;justify-content:center;">
+                <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Process Pasted UPCs
+              </button>
+            </div>
+
+            <div class="res-msg" id="r-scan"></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+              <button class="btn btn-g" onclick="dlScans()" style="font-size:11px;">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Sample Scans
+              </button>
+              <a href="https://amzn.to/3Pb146U" target="_blank" rel="noopener" style="font-size:11px;color:var(--teal);text-decoration:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
+                Buy a hand scanner ↗
+              </a>
+            </div>
+          </div>
+          <div class="card">
             <div class="card-title">Filament Catalog</div>
             <div class="card-desc">CSV: <code>UPC, Brand, Material, Type, Color, Name</code><br>
               Re-importing <strong>merges</strong> — new entries added, existing updated, inventory untouched.</div>
@@ -565,46 +640,6 @@
             <button class="btn btn-g" onclick="dlCat()" style="margin-top:10px;font-size:11px;">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download Sample Catalog
-            </button>
-          </div>
-          <div class="card">
-            <div class="card-title">UPC Scan File</div>
-            <div class="card-desc">Upload a <code>.txt</code> file <em>or</em> paste UPCs directly below — one per line. Duplicates add +1 spool each.</div>
-
-            <!-- Mode toggle -->
-            <div class="tab-bar" style="margin-bottom:12px;">
-              <button class="tab-btn active" id="scan-tab-file"  onclick="setScanMode('file')">Upload File</button>
-              <button class="tab-btn"        id="scan-tab-paste" onclick="setScanMode('paste')">Paste UPCs</button>
-            </div>
-
-            <!-- File upload mode -->
-            <div id="scan-mode-file">
-              <div class="drop-zone" id="dz-s" onclick="openFile('scan')"
-                ondragover="dzo(event,'dz-s')" ondragleave="dzl('dz-s')" ondrop="dzd(event,'scan')">
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
-                <p><strong>Click to browse</strong> or drag &amp; drop</p>
-                <p class="hint">.txt · one UPC per line</p>
-              </div>
-            </div>
-
-            <!-- Paste mode -->
-            <div id="scan-mode-paste" style="display:none;">
-              <textarea id="paste-upcs"
-                placeholder="Paste UPCs here — one per line:&#10;6949614921234&#10;6949614921234&#10;6949614921235&#10;..."
-                style="width:100%;height:130px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;line-height:1.6;transition:border-color .15s;"
-                onfocus="this.style.borderColor='var(--teal-mid)'"
-                onblur="this.style.borderColor='var(--border)'"
-              ></textarea>
-              <button class="btn btn-p" onclick="processPastedScans()" style="margin-top:8px;width:100%;justify-content:center;">
-                <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-                Process Pasted UPCs
-              </button>
-            </div>
-
-            <div class="res-msg" id="r-scan"></div>
-            <button class="btn btn-g" onclick="dlScans()" style="margin-top:10px;font-size:11px;">
-              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download Sample Scans
             </button>
           </div>
         </div>
@@ -678,6 +713,39 @@
       <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
       Clear Inventory
     </button>
+    <button class="bn-more-item" onclick="openHelpModal();closeMobileMore()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Help &amp; Add to Home Screen
+    </button>
+  </div>
+</div>
+
+<!-- ══ HELP MODAL ══ -->
+<div class="overlay" id="ov-help" style="z-index:600;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Add to Home Screen</div>
+    <div style="margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);">
+      <p style="margin-bottom:14px;">Install <strong>Filament Vault</strong> on your iPhone or iPad for quick access — it launches full-screen like a native app.</p>
+      <ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px;">
+        <li>Open this page in <strong>Safari</strong> (Chrome does not support this feature on iOS).</li>
+        <li>Tap the <strong>Share</strong> button <span style="display:inline-flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;gap:4px;font-size:12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</span> at the bottom of the screen.</li>
+        <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+        <li>Tap <strong>Add</strong> in the top-right corner.</li>
+        <li>The <strong>Filament Vault</strong> icon will appear on your home screen.</li>
+      </ol>
+      <p style="margin-top:16px;font-size:12px;color:var(--text3);">Once installed, open it from your home screen for a full-screen experience without browser navigation bars.</p>
+      <div style="margin-top:16px;padding:12px 14px;background:var(--teal-light);border:1px solid var(--teal-border);border-radius:8px;">
+        <p style="font-size:12.5px;font-weight:600;color:var(--teal);margin-bottom:4px;">💡 Pro tip: Use a hand scanner</p>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6;">A Bluetooth barcode scanner makes adding spools lightning fast — just scan each spool's UPC and it appears in the Paste box instantly.</p>
+        <a href="https://amzn.to/3Pb146U" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:var(--teal);text-decoration:none;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
+          Buy a hand scanner on Amazon ↗
+        </a>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+      <button class="btn btn-p" onclick="closeOverlay('ov-help')">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -1317,6 +1385,25 @@ function showView(n, el) {
 
 function openMobileMore()  { document.getElementById('bn-more-sheet').classList.add('open'); }
 function closeMobileMore() { document.getElementById('bn-more-sheet').classList.remove('open'); }
+
+function mobileSort(view, col) {
+  if (view === 'inv') {
+    // Toggle direction if same column
+    if (invSort.col === col) invSort.dir = invSort.dir === 'asc' ? 'desc' : 'asc';
+    else { invSort.col = col; invSort.dir = col === 'count' ? 'desc' : 'asc'; }
+    document.querySelectorAll('[id^="msort-inv-"]').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('msort-inv-' + col);
+    if (btn) btn.classList.add('active');
+    renderInv();
+  } else {
+    if (catSort.col === col) catSort.dir = catSort.dir === 'asc' ? 'desc' : 'asc';
+    else { catSort.col = col; catSort.dir = col === 'spools' ? 'desc' : 'asc'; }
+    document.querySelectorAll('[id^="msort-cat-"]').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('msort-cat-' + col);
+    if (btn) btn.classList.add('active');
+    renderCatalog();
+  }
+}
 
 // ════════════════════════════════════════════════
 // FILE I/O
@@ -2274,8 +2361,11 @@ function colorHex(name) {
   return `hsl(${Math.abs(h) % 360},40%,55%)`;
 }
 
+function openHelpModal()    { document.getElementById('ov-help').classList.add('open'); }
+function closeOverlay(id)  { document.getElementById(id).classList.remove('open'); }
+
 // Close modals on overlay click / Escape
-['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear'].forEach(id => {
+['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear','ov-help'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === e.currentTarget) {
       if (id === 'ov-edit')     closeEdit();
@@ -2283,11 +2373,12 @@ function colorHex(name) {
       if (id === 'ov-resolve')  closeResolve();
       if (id === 'ov-orphan')   closeOrphanModal();
       if (id === 'ov-clear')    closeClearModal();
+      if (id === 'ov-help')     closeOverlay('ov-help');
     }
   });
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); }
+  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); closeOverlay('ov-help'); }
 });
 
 bootstrapAuth();
