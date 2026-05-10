@@ -349,6 +349,31 @@
   .m-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .m-inv-badge{background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);border-radius:5px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
 
+  /* ── HELP VIEW ─────────────────────────────────────────────────────────── */
+  .help-body{max-width:680px;display:flex;flex-direction:column;gap:20px;}
+  .help-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow-sm);}
+  .help-section-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px;}
+  .help-section p{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:8px;}
+  .help-section ul,.help-section ol{padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text);line-height:1.65;}
+  .help-section li{padding-left:2px;}
+  .help-tip{margin-top:12px;padding:10px 13px;background:var(--teal-light);border:1px solid var(--teal-border);border-radius:8px;font-size:12.5px;color:var(--text2);line-height:1.6;}
+  .help-link{color:var(--teal);text-decoration:none;font-weight:500;}
+  .help-link:hover{text-decoration:underline;}
+
+  /* ── FIRST-LAUNCH WELCOME ───────────────────────────────────────────────── */
+  .welcome-ov{position:fixed;inset:0;background:rgba(17,19,24,.55);z-index:800;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);}
+  .welcome-ov.hidden{display:none;}
+  .welcome-card{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px 28px;box-shadow:var(--shadow-lg);animation:appear .2s ease;}
+  .welcome-logo{width:52px;height:52px;background:var(--ink);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+  .welcome-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:700;color:var(--ink);text-align:center;letter-spacing:-0.02em;margin-bottom:6px;}
+  .welcome-title span{color:var(--teal-mid);}
+  .welcome-sub{font-size:13px;color:var(--text3);text-align:center;line-height:1.6;margin-bottom:20px;}
+  .welcome-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+  .welcome-step{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:var(--text);line-height:1.55;}
+  .welcome-num{width:22px;height:22px;border-radius:50%;background:var(--teal-light);border:1px solid var(--teal-border);color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .welcome-actions{display:flex;flex-direction:column;gap:8px;}
+  .welcome-hint{text-align:center;font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.5;}
+
   /* ── MOBILE SORT BAR ───────────────────────────────────────────────────── */
   .m-sort-bar{display:none;align-items:center;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
   .m-sort-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;}
@@ -408,7 +433,7 @@
       </button>
       <button class="nav-btn" onclick="showView('orphans',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Orphaned UPCs
+        Unlinked Barcodes
         <span class="nav-badge" id="orphan-badge">0</span>
       </button>
       <button class="nav-btn" onclick="showView('import',this)">
@@ -419,6 +444,10 @@
         <svg viewBox="0 0 24 24"><path d="M8.56 2.9A7 7 0 1120.54 15"/><path d="M3.34 7a10 10 0 0017.32 10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         Unmatched Scans
         <span class="nav-badge red" id="um-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-btn" onclick="showView('help',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Help
       </button>
       <div class="nav-section">Actions</div>
       <button class="nav-btn" onclick="exportInventoryCSV()">
@@ -444,7 +473,7 @@
         </div>
         <div class="stats-row">
           <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
-          <div class="stat-card"><div class="sc-label">Filaments</div><div class="sc-value" id="s-filaments">0</div></div>
+          <div class="stat-card"><div class="sc-label">Varieties</div><div class="sc-value" id="s-filaments">0</div></div>
           <div class="stat-card"><div class="sc-label">Materials</div><div class="sc-value" id="s-mats">0</div></div>
           <div class="stat-card sc-red"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
         </div>
@@ -562,8 +591,8 @@
       <div class="view" id="view-orphans">
         <div class="page-head">
           <div>
-            <div class="page-title">Orphaned UPCs</div>
-            <div class="page-sub" id="orphan-sub">Inventory entries whose UPCs no longer exist in the catalog</div>
+            <div class="page-title">Unlinked Barcodes</div>
+            <div class="page-sub" id="orphan-sub">Inventory entries whose barcodes no longer exist in the catalog</div>
           </div>
           <button class="btn btn-g" onclick="renderOrphans()">
             <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -645,7 +674,7 @@
         </div>
         <div class="card" style="max-width:480px;">
           <div class="card-title">Add Spool Manually</div>
-          <div class="card-desc">Enter a UPC — it will match against the catalog and pool into the correct filament.</div>
+          <div class="card-desc">Enter a UPC — it will match against the catalog and be grouped with the matching filament in your inventory.</div>
           <div class="f-2" style="margin-bottom:12px;">
             <div><label class="f-label">UPC</label><input class="f-input" id="m-upc" placeholder="012345678901" style="margin:0"></div>
             <div><label class="f-label">Quantity</label><input class="f-input" type="number" id="m-qty" value="1" min="1" style="margin:0"></div>
@@ -655,6 +684,112 @@
             Add to Inventory
           </button>
           <div class="res-msg" id="r-man"></div>
+        </div>
+      </div>
+
+      <!-- ════════ HELP ════════ -->
+      <div class="view" id="view-help">
+        <div class="page-head">
+          <div><div class="page-title">Help</div><div class="page-sub">How to get the most out of Filament Vault</div></div>
+        </div>
+
+        <div class="help-body">
+
+          <div class="help-section">
+            <div class="help-section-title">How it works</div>
+            <p>Filament Vault uses two things together:</p>
+            <ul>
+              <li><strong>A Catalog</strong> — a list of every filament you own or might own, identified by UPC barcode. Think of it as your filament "dictionary."</li>
+              <li><strong>Your Inventory</strong> — the actual spools you have right now, with counts.</li>
+            </ul>
+            <p>You scan or enter your spools' barcodes, the app looks them up in the catalog, and your inventory builds itself automatically.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Step 1 — Import your Catalog</div>
+            <p>Before scanning spools, you need a catalog so the app knows what each barcode means.</p>
+            <ul>
+              <li>Go to <strong>Import</strong> and open the <strong>Filament Catalog</strong> card.</li>
+              <li>Upload a CSV file with columns: <code>UPC, Brand, Material, Type, Color, Name</code></li>
+              <li>You can download a <strong>sample catalog</strong> to see the exact format.</li>
+              <li>Re-importing is safe — it <strong>merges</strong> new entries in and never deletes existing inventory.</li>
+            </ul>
+            <div class="help-tip">💡 Bambu filament catalogs are available as community CSV files online. You only need to import once, then keep it updated as new filaments release.</div>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Step 2 — Add your Spools</div>
+            <p>Once your catalog is loaded, go to <strong>Import → UPC Scan or Paste</strong> and choose a method:</p>
+            <ul>
+              <li><strong>Hand scanner (fastest)</strong> — pair a Bluetooth barcode scanner, tap "Paste UPCs or Use Scanner," click in the box, then scan each spool. Hit Process when done. <a href="https://amzn.to/3Pb146U" target="_blank" rel="noopener" class="help-link">Buy a compatible scanner on Amazon ↗</a></li>
+              <li><strong>Paste UPCs</strong> — type or paste a list of UPCs, one per line, and hit Process.</li>
+              <li><strong>Upload a file</strong> — if your scanner exports a .txt file, use the Upload File tab.</li>
+              <li><strong>Manual entry</strong> — scroll down to Add Spool Manually, type a UPC and quantity, and hit Add.</li>
+            </ul>
+            <div class="help-tip">Each time a UPC is processed it adds +1 spool. Scanning the same UPC twice means you have two spools — that's intentional.</div>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">The Inventory view</div>
+            <p>Your main view. Each entry shows:</p>
+            <ul>
+              <li><strong>Color swatch</strong> — visual colour chip</li>
+              <li><strong>Name, Brand, Material, Type</strong> — from your catalog</li>
+              <li><strong>Spool count</strong> — tap + or − to adjust as you use filament</li>
+              <li><strong>Location</strong> — tap to set where this filament lives (e.g. Shelf A, Dry Box 2)</li>
+              <li><strong>★ Essential</strong> — star a filament you always want in stock. Use Essential Only to focus on just these.</li>
+            </ul>
+            <div class="help-tip">⚠️ Any filament with only 1 spool left shows a low-stock warning and a red count.</div>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">The Catalog view</div>
+            <ul>
+              <li>Browse your full filament database</li>
+              <li>Use the <strong>Not in Inventory</strong> tab to find catalog entries you haven't scanned yet</li>
+              <li>Edit entries to fix names, colours, or barcodes</li>
+              <li>Star filaments as Essential even before you have them in stock</li>
+            </ul>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Sorting &amp; Filtering (mobile)</div>
+            <p>Use the sort pills above the card list to sort by Spools, Name, Color, Brand, or Material. Tap the same pill again to flip between high→low and low→high.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Unlinked Barcodes</div>
+            <p>If you edit or delete a catalog entry, inventory items that referenced it lose their link. This section shows those items and lets you re-link them to the correct catalog entry or clean them up.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Unmatched Scans</div>
+            <p>If you scan a UPC that doesn't exist in your catalog, it lands here. You can link it to an existing catalog entry, create a new entry for it, or delete it if it was a mis-scan.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Syncing across devices</div>
+            <p>Sign in with <strong>Google</strong> to sync your inventory to the cloud. Any device you log into will see the same data — great for scanning in the workshop on your phone and checking stock on your desktop.</p>
+            <div class="help-tip">Your data is stored securely. If you're not signed in, data is saved locally in your browser only.</div>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">Exporting your data</div>
+            <p>Go to <strong>More → Export Inventory</strong> (mobile) or <strong>Export Inventory</strong> in the sidebar (desktop) to download a full CSV of your current stock.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">📱 Adding to your iPhone home screen</div>
+            <p>For the best mobile experience, install Filament Vault as an app:</p>
+            <ol>
+              <li>Open this page in <strong>Safari</strong> (does not work in Chrome on iOS)</li>
+              <li>Tap the <strong>Share</strong> button at the bottom of the screen</li>
+              <li>Tap <strong>"Add to Home Screen"</strong></li>
+              <li>Tap <strong>Add</strong> in the top-right corner</li>
+            </ol>
+            <p style="margin-top:10px;">It launches full-screen like a native app with no browser bars.</p>
+          </div>
+
         </div>
       </div>
 
@@ -699,7 +834,7 @@
     <div class="bn-more-handle"></div>
     <button class="bn-more-item" onclick="showView('orphans');closeMobileMore()">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Orphaned UPCs
+      Unlinked Barcodes
     </button>
     <button class="bn-more-item" onclick="showView('unmatched');closeMobileMore()">
       <svg viewBox="0 0 24 24"><path d="M8.56 2.9A7 7 0 1120.54 15"/><path d="M3.34 7a10 10 0 0017.32 10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -713,39 +848,41 @@
       <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
       Clear Inventory
     </button>
-    <button class="bn-more-item" onclick="openHelpModal();closeMobileMore()">
+    <button class="bn-more-item" onclick="showView('help');closeMobileMore()">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Help &amp; Add to Home Screen
     </button>
   </div>
 </div>
 
-<!-- ══ HELP MODAL ══ -->
-<div class="overlay" id="ov-help" style="z-index:600;">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-title">Add to Home Screen</div>
-    <div style="margin-top:14px;font-size:13.5px;line-height:1.7;color:var(--text);">
-      <p style="margin-bottom:14px;">Install <strong>Filament Vault</strong> on your iPhone or iPad for quick access — it launches full-screen like a native app.</p>
-      <ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px;">
-        <li>Open this page in <strong>Safari</strong> (Chrome does not support this feature on iOS).</li>
-        <li>Tap the <strong>Share</strong> button <span style="display:inline-flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;gap:4px;font-size:12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</span> at the bottom of the screen.</li>
-        <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
-        <li>Tap <strong>Add</strong> in the top-right corner.</li>
-        <li>The <strong>Filament Vault</strong> icon will appear on your home screen.</li>
-      </ol>
-      <p style="margin-top:16px;font-size:12px;color:var(--text3);">Once installed, open it from your home screen for a full-screen experience without browser navigation bars.</p>
-      <div style="margin-top:16px;padding:12px 14px;background:var(--teal-light);border:1px solid var(--teal-border);border-radius:8px;">
-        <p style="font-size:12.5px;font-weight:600;color:var(--teal);margin-bottom:4px;">💡 Pro tip: Use a hand scanner</p>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6;">A Bluetooth barcode scanner makes adding spools lightning fast — just scan each spool's UPC and it appears in the Paste box instantly.</p>
-        <a href="https://amzn.to/3Pb146U" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:var(--teal);text-decoration:none;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v1M7 11v1M7 15v1M12 7v1M12 11v1M12 15v1M17 7v1M17 11v1M17 15v1"/></svg>
-          Buy a hand scanner on Amazon ↗
-        </a>
+
+<!-- ══ FIRST-LAUNCH WELCOME ══ -->
+<div class="welcome-ov hidden" id="welcome-ov">
+  <div class="welcome-card">
+    <div class="welcome-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 2v20M3 7l9 5 9-5" stroke="white" stroke-width="1.6" stroke-linejoin="round" opacity=".4"/></svg>
+    </div>
+    <div class="welcome-title">Welcome to Filament <span>Vault</span></div>
+    <div class="welcome-sub">Your filament inventory, always in order. Here's how to get started in 3 steps.</div>
+    <div class="welcome-steps">
+      <div class="welcome-step">
+        <div class="welcome-num">1</div>
+        <div><strong>Import your catalog</strong> — upload a CSV of your filaments so the app knows what each barcode means.</div>
+      </div>
+      <div class="welcome-step">
+        <div class="welcome-num">2</div>
+        <div><strong>Scan or paste your UPCs</strong> — use a hand scanner, paste barcodes, or enter them manually to build your inventory.</div>
+      </div>
+      <div class="welcome-step">
+        <div class="welcome-num">3</div>
+        <div><strong>Track your spools</strong> — adjust counts with + / −, set storage locations, and get low-stock alerts.</div>
       </div>
     </div>
-    <div style="margin-top:20px;display:flex;justify-content:flex-end;">
-      <button class="btn btn-p" onclick="closeOverlay('ov-help')">Got it</button>
+    <div class="welcome-actions">
+      <button class="btn btn-p" style="justify-content:center;" onclick="dismissWelcome(false)">Get Started</button>
+      <button class="btn btn-g" style="justify-content:center;" onclick="dismissWelcome(true)">View Help First</button>
     </div>
+    <div class="welcome-hint">You can always find Help in the sidebar menu.</div>
   </div>
 </div>
 
@@ -806,7 +943,7 @@
 <div class="overlay" id="ov-catalog">
   <div class="modal">
     <div class="modal-title" id="ce-title">Add Catalog Entry</div>
-    <div class="modal-sub"   id="ce-sub">New filament SKU</div>
+    <div class="modal-sub"   id="ce-sub">New filament entry</div>
 
     <!-- UPC Manager for catalog -->
     <div class="upc-manager">
@@ -824,8 +961,10 @@
         <select class="f-select" id="ce-ftype">
           <option value="">— Select —</option>
           <option>Basic</option><option>Matte</option><option>Silk</option>
-          <option>Translucent</option><option>Sparkle</option><option>Marble</option>
-          <option>Wood</option><option>Carbon</option><option>Gradient</option><option>Other</option>
+          <option>Translucent</option><option>Sparkle</option><option>Galaxy</option>
+          <option>Marble</option><option>Glow</option><option>Metal</option>
+          <option>Wood</option><option>Carbon</option><option>Gradient</option>
+          <option>Support</option><option>Other</option>
         </select>
       </div>
     </div>
@@ -856,8 +995,10 @@
         <select class="f-select" id="rv-ftype">
           <option value="">— Select —</option>
           <option>Basic</option><option>Matte</option><option>Silk</option>
-          <option>Translucent</option><option>Sparkle</option><option>Marble</option>
-          <option>Wood</option><option>Carbon</option><option>Gradient</option><option>Other</option>
+          <option>Translucent</option><option>Sparkle</option><option>Galaxy</option>
+          <option>Marble</option><option>Glow</option><option>Metal</option>
+          <option>Wood</option><option>Carbon</option><option>Gradient</option>
+          <option>Support</option><option>Other</option>
         </select>
       </div>
     </div>
@@ -877,7 +1018,7 @@
 <!-- ══ MODAL: Reassign Orphan ══ -->
 <div class="overlay" id="ov-orphan">
   <div class="modal">
-    <div class="modal-title">Reassign Orphaned UPC</div>
+    <div class="modal-title">Reassign Unlinked Barcode</div>
     <div class="modal-sub" id="or-sub"></div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
       This UPC is no longer in the catalog. Choose how to handle it:
@@ -1295,6 +1436,17 @@ async function init() {
   rebuildUpcIndex();
   renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
   updateStats(); updateBadge();
+
+  // Show welcome overlay on first visit
+  if (!localStorage.getItem('fv-welcomed')) {
+    document.getElementById('welcome-ov').classList.remove('hidden');
+  }
+}
+
+function dismissWelcome(goToHelp) {
+  localStorage.setItem('fv-welcomed', '1');
+  document.getElementById('welcome-ov').classList.add('hidden');
+  if (goToHelp) showView('help');
 }
 
 // Handle old format where catalog/inventory were keyed by UPC
@@ -1642,20 +1794,20 @@ function renderOrphans() {
     bannerArea.innerHTML = '';
     wrap.innerHTML = `<div class="empty">
       <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
-      <h3>No orphaned UPCs</h3>
+      <h3>No unlinked barcodes</h3>
       <p>All inventory UPCs are linked to catalog entries.<br>You're in good shape.</p>
     </div>`;
-    document.getElementById('orphan-sub').textContent = 'All inventory UPCs are linked to current catalog entries';
+    document.getElementById('orphan-sub').textContent = 'All inventory barcodes are linked to current catalog entries';
     return;
   }
 
-  document.getElementById('orphan-sub').textContent = `${orphans.length} UPC${orphans.length !== 1 ? 's' : ''} found in inventory but missing from catalog`;
+  document.getElementById('orphan-sub').textContent = `${orphans.length} barcode${orphans.length !== 1 ? 's' : ''} found in inventory but missing from catalog`;
 
   bannerArea.innerHTML = `<div class="banner banner-orange">
     <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     <div>
-      <strong>Orphaned UPCs detected</strong> — these inventory entries have UPCs that no longer exist in the catalog.
-      This typically happens when Bambu reassigns a UPC. You can <strong>Reassign</strong> each one to the correct current catalog entry,
+      <strong>Unlinked barcodes detected</strong> — these inventory entries have barcodes that no longer exist in the catalog.
+      This typically happens when a manufacturer reassigns a barcode. You can <strong>Reassign</strong> each one to the correct catalog entry,
       or <strong>Remove</strong> those specific spool counts.
     </div>
   </div>`;
@@ -1671,7 +1823,7 @@ function renderOrphans() {
     <div class="table-scroll ts-orphan">
       <table>
         <thead><tr>
-          <th>Filament (Inventory Entry)</th><th>Orphaned UPC(s)</th><th>Spool Count</th><th>Actions</th>
+          <th>Filament</th><th>Unlinked Barcode(s)</th><th>Spool Count</th><th>Actions</th>
         </tr></thead>
         <tbody>
           ${Object.values(byKey).map(({ invEntry, upcs }) => `
@@ -1749,7 +1901,7 @@ function reassignOrphan() {
   }
 
   closeOrphanModal(); sched(); updateStats(); renderOrphans(); renderInv();
-  toast('Orphaned UPC reassigned successfully');
+  toast('Barcode reassigned successfully');
 }
 
 function removeOrphanSpools() {
@@ -2072,7 +2224,7 @@ function renderEditUpcList() {
     const inCat = !!upcIndex[upc];
     return `<div class="upc-row">
       <span class="upc-row-code">${upc}</span>
-      ${inCat ? `<span class="upc-row-badge">In catalog</span>` : `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--red);">Orphan</span>`}
+      ${inCat ? `<span class="upc-row-badge">In catalog</span>` : `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--red);">Unlinked</span>`}
       <button class="btn btn-d btn-xs" onclick="removeEditUpc(${i})">×</button>
     </div>`;
   }).join('');
@@ -2125,7 +2277,7 @@ function delEntry() {
 function openAddCatalog() {
   catalogEditKey = null; ceUpcList = [];
   document.getElementById('ce-title').textContent = 'Add Catalog Entry';
-  document.getElementById('ce-sub').textContent   = 'New filament SKU';
+  document.getElementById('ce-sub').textContent   = 'New filament entry';
   document.getElementById('ce-del-btn').style.display = 'none';
   ['ce-brand','ce-mat','ce-color','ce-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ce-ftype').value = '';
@@ -2365,7 +2517,7 @@ function openHelpModal()    { document.getElementById('ov-help').classList.add('
 function closeOverlay(id)  { document.getElementById(id).classList.remove('open'); }
 
 // Close modals on overlay click / Escape
-['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear','ov-help'].forEach(id => {
+['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === e.currentTarget) {
       if (id === 'ov-edit')     closeEdit();
@@ -2373,12 +2525,11 @@ function closeOverlay(id)  { document.getElementById(id).classList.remove('open'
       if (id === 'ov-resolve')  closeResolve();
       if (id === 'ov-orphan')   closeOrphanModal();
       if (id === 'ov-clear')    closeClearModal();
-      if (id === 'ov-help')     closeOverlay('ov-help');
     }
   });
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); closeOverlay('ov-help'); }
+  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); }
 });
 
 bootstrapAuth();
