@@ -2241,7 +2241,10 @@ function renderInv() {
 }
 
 function adj(key, d) {
-  if (!inventory[key]) return;
+  if (!inventory[key]) {
+    if (d <= 0 || !catalog[key]) return; // nothing to decrement; no catalog entry to create from
+    inventory[key] = { ...catalog[key], count: 0, location: '' };
+  }
   inventory[key].count = Math.max(0, inventory[key].count + d);
   updateStats(); renderInv(); sched();
   if (document.getElementById('view-lowstock').classList.contains('active')) renderLowStock();
@@ -2262,7 +2265,11 @@ function renderLowStock() {
   const bf = document.getElementById('ls-brand').value;
   const tf = document.getElementById('ls-type').value;
 
-  const lowItems = Object.values(inventory).filter(i => i.count <= 1);
+  // Source from catalog, join inventory count — shows 0-stock (never had or ran out) + 1-stock
+  const lowItems = Object.values(catalog).map(cat => {
+    const inv = inventory[cat.filamentKey] || {};
+    return { ...cat, count: inv.count || 0, location: inv.location || '', essential: inv.essential || cat.essential || false };
+  }).filter(i => i.count <= 1);
   const mats   = [...new Set(lowItems.map(i => i.material).filter(Boolean))].sort();
   const brands = [...new Set(lowItems.map(i => i.brand).filter(Boolean))].sort();
   const types  = [...new Set(lowItems.map(i => i.filamentType).filter(Boolean))].sort();
@@ -2502,7 +2509,7 @@ function updateStats() {
   const total     = items.reduce((s, i) => s + i.count, 0);
   const filaments = inStock.length;
   const mats      = new Set(inStock.map(i => i.material)).size;
-  const low       = items.filter(i => i.count <= 1).length;
+  const low       = Object.values(catalog).filter(c => (inventory[c.filamentKey]?.count || 0) <= 1).length;
   const catCt     = Object.keys(catalog).length;
 
   document.getElementById('s-total').textContent    = total;
