@@ -431,6 +431,11 @@
         <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Catalog
       </button>
+      <button class="nav-btn" onclick="showView('lowstock',this)">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Low Stock
+        <span class="nav-badge red" id="ls-badge" style="display:none">0</span>
+      </button>
       <button class="nav-btn" onclick="showView('orphans',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Unlinked Barcodes
@@ -475,9 +480,8 @@
           <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
           <div class="stat-card"><div class="sc-label">Varieties</div><div class="sc-value" id="s-filaments">0</div></div>
           <div class="stat-card"><div class="sc-label">Materials</div><div class="sc-value" id="s-mats">0</div></div>
-          <div class="stat-card sc-red"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
+          <div class="stat-card sc-red" onclick="showView('lowstock')" style="cursor:pointer;" title="View low stock items"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
         </div>
-        <div id="alert-area"></div>
         <div class="toolbar">
           <div class="search-wrap">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -519,6 +523,54 @@
           <button class="m-sort-btn" id="msort-inv-material" onclick="mobileSort('inv','material')">Material</button>
         </div>
         <div class="m-card-list" id="inv-cards"></div>
+      </div>
+
+      <!-- ════════ LOW STOCK ════════ -->
+      <div class="view" id="view-lowstock">
+        <div class="page-head">
+          <div><div class="page-title">Low Stock</div><div class="page-sub" id="ls-sub">—</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-in" id="lsq" type="text" placeholder="Search name, color, material, type…" oninput="renderLowStock()">
+          </div>
+          <select class="fsel" id="ls-mat"   onchange="renderLowStock()"><option value="">All Materials</option></select>
+          <select class="fsel" id="ls-brand" onchange="renderLowStock()"><option value="">All Brands</option></select>
+          <select class="fsel" id="ls-type"  onchange="renderLowStock()"><option value="">All Types</option></select>
+          <button class="ess-filter-btn" id="ls-ess-btn" onclick="toggleEssFilter('ls')">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Essential Only
+          </button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll ts-inv">
+            <table>
+              <thead><tr>
+                <th style="width:36px;"></th>
+                <th class="sortable" onclick="sortLS('color')">Color</th>
+                <th class="sortable" onclick="sortLS('name')">Name</th>
+                <th class="sortable" onclick="sortLS('brand')">Brand</th>
+                <th class="sortable" onclick="sortLS('material')">Material</th>
+                <th class="sortable" onclick="sortLS('filamentType')">Type</th>
+                <th>UPCs</th>
+                <th class="sortable" onclick="sortLS('count')">Spools</th>
+                <th class="sortable" onclick="sortLS('location')">Location</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="ls-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="m-sort-bar" id="ls-sort-bar">
+          <span class="m-sort-label">Sort:</span>
+          <button class="m-sort-btn active" id="msort-ls-count" onclick="mobileSort('ls','count')">Spools</button>
+          <button class="m-sort-btn" id="msort-ls-name" onclick="mobileSort('ls','name')">Name</button>
+          <button class="m-sort-btn" id="msort-ls-color" onclick="mobileSort('ls','color')">Color</button>
+          <button class="m-sort-btn" id="msort-ls-brand" onclick="mobileSort('ls','brand')">Brand</button>
+          <button class="m-sort-btn" id="msort-ls-material" onclick="mobileSort('ls','material')">Material</button>
+        </div>
+        <div class="m-card-list" id="ls-cards"></div>
       </div>
 
       <!-- ════════ CATALOG ════════ -->
@@ -836,6 +888,10 @@
   <div class="bn-more-backdrop" onclick="closeMobileMore()"></div>
   <div class="bn-more-panel">
     <div class="bn-more-handle"></div>
+    <button class="bn-more-item" onclick="showView('lowstock');closeMobileMore()">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Low Stock
+    </button>
     <button class="bn-more-item" onclick="showView('orphans');closeMobileMore()">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       Unlinked Barcodes
@@ -1327,11 +1383,13 @@ let orphanInvKey   = null;
 // Sort state
 let invSort    = { col: 'name', dir: 'asc' };
 let catSort    = { col: 'name', dir: 'asc' };
+let lsSort     = { col: 'count', dir: 'asc' };
 let catalogTab = 'all';  // 'all' | 'zero'
 
 // Essential filter state
 let invEssOnly = false;
 let catEssOnly = false;
+let lsEssOnly  = false;
 
 // ════════════════════════════════════════════════
 // SORT HELPERS
@@ -1403,6 +1461,10 @@ function toggleEssFilter(view) {
     invEssOnly = !invEssOnly;
     document.getElementById('inv-ess-btn').classList.toggle('active', invEssOnly);
     renderInv();
+  } else if (view === 'ls') {
+    lsEssOnly = !lsEssOnly;
+    document.getElementById('ls-ess-btn').classList.toggle('active', lsEssOnly);
+    renderLowStock();
   } else {
     catEssOnly = !catEssOnly;
     document.getElementById('cat-ess-btn').classList.toggle('active', catEssOnly);
@@ -1622,6 +1684,7 @@ function showView(n, el) {
   if (n === 'catalog')   renderCatalog();
   if (n === 'orphans')   renderOrphans();
   if (n === 'unmatched') renderUnmatched();
+  if (n === 'lowstock')  renderLowStock();
   closeSidebarOnMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1638,13 +1701,20 @@ function mobileSort(view, col) {
     const btn = document.getElementById('msort-inv-' + col);
     if (btn) btn.classList.add('active');
     renderInv();
-  } else {
+  } else if (view === 'cat') {
     if (catSort.col === col) catSort.dir = catSort.dir === 'asc' ? 'desc' : 'asc';
     else { catSort.col = col; catSort.dir = col === 'spools' ? 'desc' : 'asc'; }
     document.querySelectorAll('[id^="msort-cat-"]').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById('msort-cat-' + col);
     if (btn) btn.classList.add('active');
     renderCatalog();
+  } else if (view === 'ls') {
+    if (lsSort.col === col) lsSort.dir = lsSort.dir === 'asc' ? 'desc' : 'asc';
+    else { lsSort.col = col; lsSort.dir = col === 'count' ? 'asc' : 'asc'; }
+    document.querySelectorAll('[id^="msort-ls-"]').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('msort-ls-' + col);
+    if (btn) btn.classList.add('active');
+    renderLowStock();
   }
 }
 
@@ -2125,13 +2195,6 @@ function renderInv() {
         </div>`;
       }).join('');
     }
-    // Alert banner
-    const lows = Object.values(inventory).filter(i => i.count === 1);
-    const aa = document.getElementById('alert-area');
-    if (lows.length) {
-      const ns = lows.slice(0,3).map(i => i.name).join(', ') + (lows.length > 3 ? ` +${lows.length-3} more` : '');
-      aa.innerHTML = `<div class="banner banner-amber"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><strong>Low Stock:</strong> ${ns} — only 1 spool remaining</div></div>`;
-    } else aa.innerHTML = '';
     return;
   }
 
@@ -2174,14 +2237,6 @@ function renderInv() {
   }).join('');
 
   updateSortHeaders('inv-tbody', invSort);
-
-  // Alert banner
-  const lows = Object.values(inventory).filter(i => i.count === 1);
-  const aa   = document.getElementById('alert-area');
-  if (lows.length) {
-    const ns = lows.slice(0,3).map(i => i.name).join(', ') + (lows.length > 3 ? ` +${lows.length-3} more` : '');
-    aa.innerHTML = `<div class="banner banner-amber"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><strong>Low Stock:</strong> ${ns} — only 1 spool remaining</div></div>`;
-  } else aa.innerHTML = '';
 }
 
 function adj(key, d) {
@@ -2189,6 +2244,130 @@ function adj(key, d) {
   inventory[key].count = Math.max(0, inventory[key].count + d);
   if (inventory[key].count === 0) delete inventory[key];
   updateStats(); renderInv(); sched();
+  if (document.getElementById('view-lowstock').classList.contains('active')) renderLowStock();
+}
+
+function sortLS(col) {
+  if (lsSort.col === col) lsSort.dir = lsSort.dir === 'asc' ? 'desc' : 'asc';
+  else { lsSort.col = col; lsSort.dir = 'asc'; }
+  renderLowStock();
+}
+
+// ════════════════════════════════════════════════
+// RENDER LOW STOCK
+// ════════════════════════════════════════════════
+function renderLowStock() {
+  const q  = document.getElementById('lsq').value.toLowerCase();
+  const mf = document.getElementById('ls-mat').value;
+  const bf = document.getElementById('ls-brand').value;
+  const tf = document.getElementById('ls-type').value;
+
+  const lowItems = Object.values(inventory).filter(i => i.count <= 1);
+  const mats   = [...new Set(lowItems.map(i => i.material).filter(Boolean))].sort();
+  const brands = [...new Set(lowItems.map(i => i.brand).filter(Boolean))].sort();
+  const types  = [...new Set(lowItems.map(i => i.filamentType).filter(Boolean))].sort();
+  rebuildSel('ls-mat', mf, mats, 'All Materials');
+  rebuildSel('ls-brand', bf, brands, 'All Brands');
+  rebuildSel('ls-type', tf, types, 'All Types');
+
+  const orphanUpcs = new Set(getOrphans().map(o => o.upc));
+
+  const getLSVal = (it, col) => {
+    if (col === 'count')  return it.count || 0;
+    if (col === 'name')   return it.name || '';
+    if (col === 'color')  return it.color || '';
+    if (col === 'brand')  return it.brand || '';
+    if (col === 'material') return it.material || '';
+    if (col === 'filamentType') return it.filamentType || '';
+    if (col === 'location') return it.location || '';
+    return '';
+  };
+
+  let items = lowItems.filter(it => {
+    const s = !q || [it.name, it.color, it.material, it.brand, it.filamentType, ...(it.upcs || [])]
+      .some(v => (v || '').toLowerCase().includes(q));
+    const ess = !lsEssOnly || it.essential;
+    return s && (!mf || it.material === mf) && (!bf || it.brand === bf) && (!tf || it.filamentType === tf) && ess;
+  });
+  items = applySort(items, lsSort.col, lsSort.dir, getLSVal);
+
+  // ── Mobile: render cards ──
+  if (isMobile) {
+    const container = document.getElementById('ls-cards');
+    if (!items.length) {
+      container.innerHTML = `<div class="empty">
+        <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+        <h3>All clear</h3>
+        <p>No filaments are running low right now.</p>
+      </div>`;
+    } else {
+      container.innerHTML = items.map(it => {
+        const hex = colorHex(it.color);
+        const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
+        return `<div class="m-card low-stock">
+          <div class="m-card-head">
+            <div class="m-swatch" style="background:${hex}"></div>
+            <div class="m-card-info">
+              <div class="m-card-name">${it.name}</div>
+              <div class="m-card-meta">${meta}</div>
+            </div>
+            <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">${starIcon(it.essential)}</button>
+          </div>
+          <div class="m-card-foot">
+            <span class="m-card-loc" onclick="openEdit('${it.filamentKey}')">${it.location || 'No location'}</span>
+            <div class="m-card-actions">
+              <div class="cnt-group">
+                <button class="cnt-btn" onclick="adj('${it.filamentKey}',-1)">−</button>
+                <span class="cnt-val low">${it.count}</span>
+                <button class="cnt-btn" onclick="adj('${it.filamentKey}',1)">+</button>
+              </div>
+              <button class="btn btn-g btn-sm" onclick="openEdit('${it.filamentKey}')">Edit</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    return;
+  }
+
+  // ── Desktop: render table ──
+  const tb = document.getElementById('ls-tbody');
+  if (!items.length) {
+    tb.innerHTML = `<tr><td colspan="9"><div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+      <h3>All clear</h3>
+      <p>No filaments are running low right now.</p>
+    </div></td></tr>`; return;
+  }
+
+  tb.innerHTML = items.map(it => {
+    const hex = colorHex(it.color);
+    const upcHtml = (it.upcs || []).map(u =>
+      `<span class="upc-pill ${orphanUpcs.has(u) ? 'orphan' : ''}">${u}</span>`
+    ).join('');
+    return `<tr>
+      <td style="padding:10px 8px 10px 14px;">
+        <button class="ess-toggle ${it.essential ? 'on' : ''}" onclick="toggleEssential('${it.filamentKey}')" title="${it.essential ? 'Essential — click to unmark' : 'Mark as Essential'}">
+          ${starIcon(it.essential)}
+        </button>
+      </td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td style="font-weight:600;color:var(--ink)">${it.name}</td>
+      <td style="color:var(--text3)">${it.brand}</td>
+      <td><span class="mat-chip">${it.material}</span></td>
+      <td>${it.filamentType ? `<span class="type-chip ${typeClass(it.filamentType)}">${it.filamentType}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td><div class="upc-list">${upcHtml || '<span style="color:var(--text3);font-size:11px;">—</span>'}</div></td>
+      <td><div class="cnt-group">
+        <button class="cnt-btn" onclick="adj('${it.filamentKey}',-1)">−</button>
+        <span class="cnt-val low">${it.count}</span>
+        <button class="cnt-btn" onclick="adj('${it.filamentKey}',1)">+</button>
+      </div></td>
+      <td><span class="loc-tag" onclick="openEdit('${it.filamentKey}')">${it.location || '—'}</span></td>
+      <td><button class="btn btn-g btn-sm" onclick="openEdit('${it.filamentKey}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+
+  updateSortHeaders('ls-tbody', lsSort);
 }
 
 // ════════════════════════════════════════════════
@@ -2334,6 +2513,9 @@ function updateStats() {
   document.getElementById('h-cat').textContent      = catCt;
   document.getElementById('inv-sub').textContent    = `${total} total spools across ${filaments} unique filaments`;
   document.getElementById('cat-sub').textContent    = `${catCt} entries · ${Object.keys(upcIndex).length} UPCs indexed`;
+  document.getElementById('ls-sub').textContent     = `${low} filament${low !== 1 ? 's' : ''} with only 1 spool remaining`;
+  const lsBadge = document.getElementById('ls-badge');
+  if (lsBadge) { lsBadge.textContent = low; lsBadge.style.display = low > 0 ? 'inline' : 'none'; }
 }
 
 function updateBadge() {
