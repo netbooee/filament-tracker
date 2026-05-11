@@ -1735,6 +1735,36 @@ function parseCat(text) {
 
   rebuildUpcIndex();
 
+  // Re-key inventory entries whose catalog keys changed (e.g. after a full re-import)
+  const reconciledInv = {};
+  let rekeyed = 0;
+  Object.entries(inventory).forEach(([oldKey, inv]) => {
+    // Find the new catalog key by matching any of this entry's UPCs
+    let newKey = null;
+    for (const upc of (inv.upcs || [])) {
+      if (upcIndex[upc] && catalog[upcIndex[upc]]) { newKey = upcIndex[upc]; break; }
+    }
+    if (!newKey) { reconciledInv[oldKey] = inv; return; } // no match → stays orphan
+    const cat = catalog[newKey];
+    if (newKey !== oldKey) rekeyed++;
+    if (!reconciledInv[newKey]) {
+      reconciledInv[newKey] = {
+        ...inv,
+        filamentKey: newKey,
+        material:     cat.material,
+        filamentType: cat.filamentType,
+        brand:        cat.brand,
+        color:        cat.color,
+        name:         cat.name,
+        upcs:         cat.upcs
+      };
+    } else {
+      // Two old entries collapsed to same new key — sum counts
+      reconciledInv[newKey].count = (reconciledInv[newKey].count || 0) + (inv.count || 0);
+    }
+  });
+  inventory = reconciledInv;
+
   const orphanCount = getOrphans().length;
   let msg = `✓ Catalog merged — ${added} added, ${updated} updated, ${merged} new UPC(s) linked`;
   if (orphanCount > 0) msg += `. ⚠ ${orphanCount} orphaned inventory UPC(s) detected.`;
