@@ -475,6 +475,10 @@
       <div class="view active" id="view-inventory">
         <div class="page-head">
           <div><div class="page-title">Inventory</div><div class="page-sub" id="inv-sub">—</div></div>
+          <button class="btn btn-p" onclick="openAddSpool()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Spool
+          </button>
         </div>
         <div class="stats-row">
           <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
@@ -1085,6 +1089,23 @@
       <button class="btn btn-g btn-sm" onclick="closeOrphanModal()">Cancel</button>
       <button class="btn btn-d btn-sm" onclick="removeOrphanSpools()">Remove These Spools</button>
       <button class="btn btn-p btn-sm" onclick="reassignOrphan()">Reassign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add Spool ══ -->
+<div class="overlay" id="ov-add-spool">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">Add Spool</div>
+    <div class="modal-sub">Scan or type a UPC — it will match against the catalog</div>
+    <div class="f-2" style="margin-bottom:12px;">
+      <div><label class="f-label">UPC</label><input class="f-input" id="as-upc" placeholder="012345678901" style="margin:0" onkeydown="if(event.key==='Enter')saveAddSpool()"></div>
+      <div><label class="f-label">Quantity</label><input class="f-input" type="number" id="as-qty" value="1" min="1" style="margin:0"></div>
+    </div>
+    <div class="res-msg" id="r-as"></div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeAddSpool()">Close</button>
+      <button class="btn btn-p btn-sm" onclick="saveAddSpool()">Add to Inventory</button>
     </div>
   </div>
 </div>
@@ -1965,6 +1986,41 @@ function manualAdd() {
     updateBadge();
   }
   document.getElementById('m-upc').value = ''; sched();
+}
+
+// ════════════════════════════════════════════════
+// ADD SPOOL MODAL (Inventory view)
+// ════════════════════════════════════════════════
+function openAddSpool() {
+  document.getElementById('as-upc').value = '';
+  document.getElementById('as-qty').value = '1';
+  document.getElementById('r-as').textContent = '';
+  document.getElementById('r-as').className = 'res-msg';
+  document.getElementById('ov-add-spool').classList.add('open');
+  setTimeout(() => document.getElementById('as-upc').focus(), 100);
+}
+function closeAddSpool() { document.getElementById('ov-add-spool').classList.remove('open'); }
+function saveAddSpool() {
+  const upc = document.getElementById('as-upc').value.trim().replace(/\D/g, '');
+  const qty = parseInt(document.getElementById('as-qty').value) || 1;
+  if (!upc) { setRes('r-as', 'err', '⚠ Enter a UPC'); return; }
+  const key = upcIndex[upc];
+  if (key && catalog[key]) {
+    if (!inventory[key]) inventory[key] = { ...catalog[key], upcs: [upc], count: 0, location: '' };
+    else if (!inventory[key].upcs.includes(upc)) inventory[key].upcs.push(upc);
+    inventory[key].count += qty;
+    setRes('r-as', 'ok', `✓ Added ${qty} × ${catalog[key].name}`);
+    updateStats(); renderInv();
+    if (document.getElementById('view-lowstock').classList.contains('active')) renderLowStock();
+  } else {
+    const ex = unmatched.find(u => u.upc === upc);
+    if (ex) ex.count += qty; else unmatched.push({ upc, count: qty });
+    setRes('r-as', 'err', '⚠ UPC not in catalog — added to Unmatched');
+    updateBadge();
+  }
+  document.getElementById('as-upc').value = '';
+  document.getElementById('as-qty').value = '1';
+  sched();
 }
 
 // ════════════════════════════════════════════════
