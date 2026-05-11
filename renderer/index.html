@@ -1765,12 +1765,29 @@ function parseCat(text) {
   });
   inventory = reconciledInv;
 
+  // Auto-match any previously-unmatched UPCs that now have a catalog entry
+  let autoMatched = 0;
+  unmatched = unmatched.filter(({ upc, count }) => {
+    const key = upcIndex[upc];
+    if (!key || !catalog[key]) return true; // still no match
+    if (!inventory[key]) {
+      inventory[key] = { ...catalog[key], upcs: [upc], count: 0, location: '' };
+      inventory[key].essential = catalog[key].essential || false;
+    } else if (!inventory[key].upcs.includes(upc)) {
+      inventory[key].upcs.push(upc);
+    }
+    inventory[key].count += count;
+    autoMatched += count;
+    return false; // resolved — remove from unmatched
+  });
+
   const orphanCount = getOrphans().length;
   let msg = `✓ Catalog merged — ${added} added, ${updated} updated, ${merged} new UPC(s) linked`;
+  if (autoMatched > 0) msg += ` · ${autoMatched} previously unmatched spool(s) now linked`;
   if (orphanCount > 0) msg += `. ⚠ ${orphanCount} orphaned inventory UPC(s) detected.`;
 
   setRes('r-cat', orphanCount > 0 ? 'warn' : 'ok', msg);
-  updateStats(); renderCatalog(); renderOrphans(); sched();
+  updateStats(); renderCatalog(); renderInv(); renderOrphans(); renderUnmatched(); sched();
 }
 
 function csvLine(l) {
@@ -1787,6 +1804,8 @@ function csvLine(l) {
 // SCAN PROCESSING
 // ════════════════════════════════════════════════
 function processScans(text) {
+  // Guard: ensure upcIndex is in sync with catalog before matching
+  if (Object.keys(upcIndex).length === 0 && Object.keys(catalog).length > 0) rebuildUpcIndex();
   const lines = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   let matched = 0;
   const um = {};
