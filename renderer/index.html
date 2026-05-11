@@ -1112,7 +1112,10 @@ const webAPI = {
     input.type = 'file';
     const exts = (options?.filters?.[0]?.extensions || []).map(e => '.' + e).join(',');
     if (exts) input.accept = exts;
+    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(input);
     input.onchange = e => {
+      document.body.removeChild(input);
       const file = e.target.files && e.target.files[0];
       if (!file) return resolve(null);
       const reader = new FileReader();
@@ -1120,6 +1123,11 @@ const webAPI = {
       reader.onerror = () => resolve({ error: 'read failed' });
       reader.readAsText(file);
     };
+    // If user dismisses picker without selecting, clean up
+    window.addEventListener('focus', function cleanup() {
+      window.removeEventListener('focus', cleanup);
+      setTimeout(() => { if (document.body.contains(input)) document.body.removeChild(input); }, 500);
+    }, { once: true });
     input.click();
   }),
   // Native save dialog isn't available in the browser — callers fall back to dlFile()
@@ -1662,7 +1670,7 @@ function dzd(e, t)  {
 // CATALOG PARSING  — MERGE mode
 // ════════════════════════════════════════════════
 function parseCat(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   let hdr = null, added = 0, updated = 0, merged = 0;
 
   lines.forEach((line, i) => {
@@ -1749,7 +1757,7 @@ function csvLine(l) {
 // SCAN PROCESSING
 // ════════════════════════════════════════════════
 function processScans(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   let matched = 0;
   const um = {};
 
