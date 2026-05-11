@@ -2151,6 +2151,7 @@ function renderInv() {
   };
 
   let items = Object.values(inventory).filter(it => {
+    if (it.count <= 0) return false; // 0-stock items live in Low Stock view only
     const s = !q || [it.name, it.color, it.material, it.brand, it.filamentType, ...(it.upcs || [])]
       .some(v => (v || '').toLowerCase().includes(q));
     const ess = !invEssOnly || it.essential;
@@ -2242,7 +2243,6 @@ function renderInv() {
 function adj(key, d) {
   if (!inventory[key]) return;
   inventory[key].count = Math.max(0, inventory[key].count + d);
-  if (inventory[key].count === 0) delete inventory[key];
   updateStats(); renderInv(); sched();
   if (document.getElementById('view-lowstock').classList.contains('active')) renderLowStock();
 }
@@ -2497,11 +2497,12 @@ function renderCatalog() {
 // STATS
 // ════════════════════════════════════════════════
 function updateStats() {
-  const items = Object.values(inventory);
+  const items     = Object.values(inventory);
+  const inStock   = items.filter(i => i.count > 0);
   const total     = items.reduce((s, i) => s + i.count, 0);
-  const filaments = items.length;
-  const mats      = new Set(items.map(i => i.material)).size;
-  const low       = items.filter(i => i.count === 1).length;
+  const filaments = inStock.length;
+  const mats      = new Set(inStock.map(i => i.material)).size;
+  const low       = items.filter(i => i.count <= 1).length;
   const catCt     = Object.keys(catalog).length;
 
   document.getElementById('s-total').textContent    = total;
@@ -2511,7 +2512,7 @@ function updateStats() {
   document.getElementById('h-total').textContent    = total;
   document.getElementById('h-filaments').textContent= filaments;
   document.getElementById('h-cat').textContent      = catCt;
-  document.getElementById('inv-sub').textContent    = `${total} total spools across ${filaments} unique filaments`;
+  document.getElementById('inv-sub').textContent    = `${total} total spools across ${filaments} in-stock filaments`;
   document.getElementById('cat-sub').textContent    = `${catCt} entries · ${Object.keys(upcIndex).length} UPCs indexed`;
   document.getElementById('ls-sub').textContent     = `${low} filament${low !== 1 ? 's' : ''} with only 1 spool remaining`;
   const lsBadge = document.getElementById('ls-badge');
