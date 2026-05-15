@@ -1031,7 +1031,45 @@
       </div>
     </div>
     <div class="f-2">
-      <div><label class="f-label">Type</label><input class="f-input" id="ce-ftype" placeholder="e.g. MATTE, SILK, BASIC" style="margin:0"></div>
+      <div><label class="f-label">Type</label>
+        <select class="f-select" id="ce-ftype" style="margin:0">
+          <option value="">— Select —</option>
+          <optgroup label="Common">
+            <option>Basic</option>
+            <option>Matte</option>
+          </optgroup>
+          <optgroup label="Finish / Aesthetic">
+            <option>Silk</option>
+            <option>Silk+</option>
+            <option>Glitter</option>
+            <option>Marble</option>
+            <option>Galaxy</option>
+          </optgroup>
+          <optgroup label="Special Effect">
+            <option>Glow</option>
+            <option>Color Change</option>
+            <option>Translucent</option>
+          </optgroup>
+          <optgroup label="Composite / Filled">
+            <option>Wood</option>
+            <option>Metal</option>
+            <option>Carbon Fiber</option>
+            <option>Glass Fiber</option>
+            <option>Kevlar</option>
+          </optgroup>
+          <optgroup label="Performance">
+            <option>High Flow</option>
+            <option>High Speed</option>
+            <option>Tough</option>
+            <option>Flexible</option>
+          </optgroup>
+          <optgroup label="Blends / Other">
+            <option>Rainbow</option>
+            <option>Dual Color</option>
+            <option>Other</option>
+          </optgroup>
+        </select>
+      </div>
       <div><label class="f-label">Color *</label><input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0"></div>
     </div>
     <div style="margin-top:12px;">
@@ -1063,7 +1101,45 @@
       </div>
     </div>
     <div class="f-2">
-      <div><label class="f-label">Type</label><input class="f-input" id="rv-ftype" placeholder="e.g. MATTE, SILK, BASIC"></div>
+      <div><label class="f-label">Type</label>
+        <select class="f-select" id="rv-ftype">
+          <option value="">— Select —</option>
+          <optgroup label="Common">
+            <option>Basic</option>
+            <option>Matte</option>
+          </optgroup>
+          <optgroup label="Finish / Aesthetic">
+            <option>Silk</option>
+            <option>Silk+</option>
+            <option>Glitter</option>
+            <option>Marble</option>
+            <option>Galaxy</option>
+          </optgroup>
+          <optgroup label="Special Effect">
+            <option>Glow</option>
+            <option>Color Change</option>
+            <option>Translucent</option>
+          </optgroup>
+          <optgroup label="Composite / Filled">
+            <option>Wood</option>
+            <option>Metal</option>
+            <option>Carbon Fiber</option>
+            <option>Glass Fiber</option>
+            <option>Kevlar</option>
+          </optgroup>
+          <optgroup label="Performance">
+            <option>High Flow</option>
+            <option>High Speed</option>
+            <option>Tough</option>
+            <option>Flexible</option>
+          </optgroup>
+          <optgroup label="Blends / Other">
+            <option>Rainbow</option>
+            <option>Dual Color</option>
+            <option>Other</option>
+          </optgroup>
+        </select>
+      </div>
       <div><label class="f-label">Color</label><input class="f-input" id="rv-col" placeholder="Jade White"></div>
     </div>
     <label class="f-label">Name / SKU</label>
@@ -2680,7 +2756,7 @@ function openEditCatalog(key) {
   document.getElementById('ce-del-btn').style.display = 'inline-flex';
   document.getElementById('ce-brand').value  = it.brand || '';
   document.getElementById('ce-mat').value    = it.material || '';
-  document.getElementById('ce-ftype').value  = it.filamentType || '';
+  setSelectCI('ce-ftype', it.filamentType || '');
   document.getElementById('ce-color').value  = it.color || '';
   document.getElementById('ce-name').value   = it.name || '';
   renderCeUpcList();
@@ -2895,6 +2971,15 @@ function typeClass(t) {
 }
 
 function setRes(id, t, msg) { const el = document.getElementById(id); el.textContent = msg; el.className = `res-msg ${t}`; }
+
+// Set a <select> value case-insensitively; falls back to 'Other' if no match
+function setSelectCI(id, val) {
+  const sel = document.getElementById(id);
+  if (!val) { sel.value = ''; return; }
+  const lower = val.toLowerCase();
+  const opt = Array.from(sel.options).find(o => o.value.toLowerCase() === lower);
+  sel.value = opt ? opt.value : 'Other';
+}
 
 function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg;
