@@ -1439,49 +1439,76 @@ function updateUserBadge() {
   }
 }
 
-// Merge local inventory into cloud on first sign-in (if cloud is empty)
-async function migrateLocalToCloudIfNeeded() {
-  const cloud = await supabaseAPI.loadData();
-  const cloudEmpty = !cloud || (
-    Object.keys(cloud.catalog || {}).length === 0 &&
-    Object.keys(cloud.inventory || {}).length === 0
-  );
-  if (!cloudEmpty) return cloud;
-  const local = await webAPI.loadData();
-  const localHasData = local && (
-    Object.keys(local.catalog || {}).length > 0 ||
-    Object.keys(local.inventory || {}).length > 0
-  );
-  if (localHasData) {
-    await supabaseAPI.saveData(local);
-    return local;
-  }
-  return cloud;
+// ── User-scoped localStorage (primary storage — instant, reliable) ──
+function userKey() { return `fv-${currentUser?.id || 'anon'}`; }
+function saveUserLocal(d) {
+  try { localStorage.setItem(userKey(), JSON.stringify(d)); vlogAdd('LOCAL save OK'); }
+  catch(e) { vlogAdd(`LOCAL save ERROR: ${e.message}`); }
+}
+function loadUserLocal() {
+  try { return JSON.parse(localStorage.getItem(userKey())); }
+  catch(e) { return null; }
+}
+
+// Try to push/pull from Supabase in the background — never blocks the UI
+async function syncToCloud(d) {
+  if (!sb || !currentUser) return;
+  try {
+    const { data: updated, error: updateErr } = await supabaseAPI.saveData(d);
+    // saveData logs its own result to vlogAdd
+  } catch(e) { vlogAdd(`CLOUD sync ERROR: ${e.message}`); }
+}
+async function pullFromCloud() {
+  if (!sb || !currentUser) return null;
+  try { return await supabaseAPI.loadData(); }
+  catch(e) { vlogAdd(`CLOUD pull ERROR: ${e.message}`); return null; }
+}
+
+function applyData(d) {
+  catalog   = d?.catalog   || {};
+  inventory = d?.inventory || {};
+  upcIndex  = d?.upcIndex  || {};
+  unmatched = Array.isArray(d?.unmatched) ? d.unmatched : [];
+  if (d) migrateOldData(d);
+  rebuildUpcIndex();
+  renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
+  updateStats(); updateBadge();
 }
 
 let signInDone = false;
-let dataLoaded = false; // guard — sched() must not save before data is confirmed loaded
+let dataLoaded = false;
 async function onSignedIn(user) {
-  if (signInDone && currentUser?.id === user.id) return;  // de-dupe concurrent fires
+  if (signInDone && currentUser?.id === user.id) return;
   signInDone = true;
   currentUser = user;
   api = supabaseAPI;
   localStorage.removeItem('fv-local-only');
   hideAuthOverlay();
   updateUserBadge();
-  const data = await migrateLocalToCloudIfNeeded();
-  catalog   = data?.catalog   || {};
-  inventory = data?.inventory || {};
-  upcIndex  = data?.upcIndex  || {};
-  unmatched = Array.isArray(data?.unmatched) ? data.unmatched : [];
-  if (data) migrateOldData(data);
-  rebuildUpcIndex();
-  dataLoaded = true; // permit sched() to save — data is now confirmed loaded
-  document.getElementById('dp').textContent = await api.getDataPath();
-  console.log('[vault] loaded',
-    { catalog: Object.keys(catalog).length, inventory: Object.keys(inventory).length, unmatched: unmatched.length });
-  renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
-  updateStats(); updateBadge();
+
+  // 1. Load from localStorage immediately — no network needed
+  const local = loadUserLocal();
+  const localCount = Object.keys(local?.catalog || {}).length;
+  vlogAdd(`LOCAL load: catalog=${localCount}`);
+  applyData(local);
+  dataLoaded = true; // sched() may now save
+  document.getElementById('dp').textContent = 'Supabase · ' + (user.email || '');
+
+  // 2. Pull from Supabase in background — if it has more data, update
+  pullFromCloud().then(cloud => {
+    if (!cloud) return;
+    const cloudCount = Object.keys(cloud.catalog || {}).length;
+    vlogAdd(`CLOUD load: catalog=${cloudCount}`);
+    if (cloudCount > localCount) {
+      vlogAdd('CLOUD has more data — applying');
+      applyData(cloud);
+      saveUserLocal({ catalog, inventory, upcIndex, unmatched });
+    } else if (localCount > 0 && cloudCount === 0) {
+      // local has data but cloud is empty — push local up
+      vlogAdd('Pushing local data to cloud');
+      syncToCloud({ catalog, inventory, upcIndex, unmatched });
+    }
+  });
 }
 
 function onSignedOut() {
@@ -1814,22 +1841,19 @@ function rebuildUpcIndex() {
 // SAVE
 // ════════════════════════════════════════════════
 function sched() {
-  if (!dataLoaded) return; // never save before data is confirmed loaded from cloud
+  if (!dataLoaded) return;
   const pip = document.getElementById('save-pip'), txt = document.getElementById('save-txt');
   pip.className = 'save-pip saving'; txt.textContent = 'Saving…';
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    const res = await api.saveData({ catalog, inventory, upcIndex, unmatched });
-    if (res && res.success === false) {
-      pip.style.background = 'var(--red)';
-      txt.textContent = 'Save failed';
-      console.error('[vault] save failed', res.error);
-      toast('Save failed: ' + (res.error || 'unknown') + ' — check console');
-    } else {
-      pip.style.background = '';
-      pip.className = 'save-pip';
-      txt.textContent = 'Saved';
-    }
+  saveTimer = setTimeout(() => {
+    const d = { catalog, inventory, upcIndex, unmatched };
+    // Save to localStorage immediately — instant, always works
+    saveUserLocal(d);
+    pip.style.background = '';
+    pip.className = 'save-pip';
+    txt.textContent = 'Saved';
+    // Sync to Supabase in background — don't wait for it
+    syncToCloud(d);
   }, 800);
 }
 
