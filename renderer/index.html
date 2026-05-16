@@ -1360,19 +1360,21 @@ const supabaseAPI = {
   loadData: async () => {
     if (!currentUser) return null;
     const { data, error } = await sb.from('vault')
-      .select('data').eq('user_id', currentUser.id).maybeSingle();
+      .select('data').eq('user_id', currentUser.id)
+      .order('updated_at', { ascending: false }).limit(1);
     if (error) { console.error('vault load', error); return null; }
-    if (!data) {
+    if (!data || data.length === 0) {
       await sb.from('vault').insert({ user_id: currentUser.id, data: {} });
       return null;
     }
-    return data.data;
+    return data[0].data;
   },
   saveData: async (d) => {
     if (!currentUser) return { success: false, error: 'not signed in' };
-    const { error } = await sb.from('vault').upsert({
-      user_id: currentUser.id, data: d, updated_at: new Date().toISOString()
-    });
+    const { error } = await sb.from('vault').upsert(
+      { user_id: currentUser.id, data: d, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
     if (error) { console.error('vault save', error); return { success: false, error: error.message }; }
     return { success: true };
   },
@@ -1447,12 +1449,13 @@ async function migrateLocalToCloudIfNeeded() {
   let cloud = null, cloudLoadFailed = false;
   try {
     const { data, error } = await sb.from('vault')
-      .select('data').eq('user_id', currentUser.id).maybeSingle();
+      .select('data').eq('user_id', currentUser.id)
+      .order('updated_at', { ascending: false }).limit(1);
     if (error) {
       cloudLoadFailed = true;
       console.error('[vault] cloud load error:', error);
-    } else if (data) {
-      cloud = data.data;
+    } else if (data && data.length > 0) {
+      cloud = data[0].data;
     } else {
       // No row yet — insert an empty placeholder so upserts work later
       await sb.from('vault').insert({ user_id: currentUser.id, data: {} }).select();
@@ -1544,10 +1547,6 @@ async function bootstrapAuth() {
     }
   });
 
-  // Detect OAuth redirect (implicit: #access_token, PKCE: ?code=)
-  const isOAuthRedirect = window.location.hash.includes('access_token') ||
-                          window.location.search.includes('code=');
-
   sb.auth.onAuthStateChange(async (event, session) => {
     // Only act on positive auth events.
     // SIGNED_OUT is intentionally ignored here — on mobile it fires
@@ -1557,22 +1556,13 @@ async function bootstrapAuth() {
     if (session?.user) await onSignedIn(session.user);
   });
 
-  if (isOAuthRedirect) {
-    // Let onAuthStateChange handle the token — don't flash login screen
-    // Safety net: show login if no session after 6s
-    setTimeout(async () => {
-      if (!currentUser) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session?.user) showAuthOverlay();
-      }
-    }, 6000);
+  // In Supabase v2 with detectSessionInUrl:true, getSession() automatically
+  // processes the ?code= OAuth redirect parameter — no separate detection needed.
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    await onSignedIn(session.user);
   } else {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      await onSignedIn(session.user);
-    } else {
-      showAuthOverlay();
-    }
+    showAuthOverlay();
   }
 }
 
