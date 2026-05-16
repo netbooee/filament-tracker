@@ -1293,7 +1293,7 @@ const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
 const sb = (window.supabase && !window.electronAPI)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'implicit' }
     })
   : null;
 
@@ -1315,12 +1315,18 @@ const supabaseAPI = {
   },
   saveData: async (d) => {
     if (!currentUser) return { success: false, error: 'not signed in' };
-    // onConflict:'user_id' updates the existing row rather than inserting a new one
-    const { error } = await sb.from('vault').upsert(
-      { user_id: currentUser.id, data: d, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-    if (error) { console.error('vault save', error); return { success: false, error: error.message }; }
+    // UPDATE existing row first — works regardless of unique constraint setup
+    const { data: updated, error: updateErr } = await sb.from('vault')
+      .update({ data: d, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id)
+      .select('user_id');
+    if (updateErr) { console.error('vault update', updateErr); return { success: false, error: updateErr.message }; }
+    // If no row existed yet, INSERT one
+    if (!updated || updated.length === 0) {
+      const { error: insertErr } = await sb.from('vault')
+        .insert({ user_id: currentUser.id, data: d, updated_at: new Date().toISOString() });
+      if (insertErr) { console.error('vault insert', insertErr); return { success: false, error: insertErr.message }; }
+    }
     return { success: true };
   },
   getDataPath: async () => 'Supabase · ' + (currentUser?.email || ''),
