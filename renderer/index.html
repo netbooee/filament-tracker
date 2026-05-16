@@ -1443,12 +1443,47 @@ function updateUserBadge() {
 
 // Merge local inventory into cloud on first sign-in (if cloud is empty)
 async function migrateLocalToCloudIfNeeded() {
-  const cloud = await supabaseAPI.loadData();
+  // Load from cloud, but distinguish a real error from genuinely empty data
+  let cloud = null, cloudLoadFailed = false;
+  try {
+    const { data, error } = await sb.from('vault')
+      .select('data').eq('user_id', currentUser.id).maybeSingle();
+    if (error) {
+      cloudLoadFailed = true;
+      console.error('[vault] cloud load error:', error);
+    } else if (data) {
+      cloud = data.data;
+    } else {
+      // No row yet — insert an empty placeholder so upserts work later
+      await sb.from('vault').insert({ user_id: currentUser.id, data: {} }).select();
+    }
+  } catch(e) {
+    cloudLoadFailed = true;
+    console.error('[vault] cloud load exception:', e);
+  }
+
+  // If the load errored, fall back to localStorage rather than wiping cloud
+  if (cloudLoadFailed) {
+    const local = await webAPI.loadData();
+    const localHasData = local && (
+      Object.keys(local.catalog || {}).length > 0 ||
+      Object.keys(local.inventory || {}).length > 0
+    );
+    if (localHasData) {
+      toast('⚠ Cloud sync error — showing local backup');
+      return local;
+    }
+    toast('⚠ Could not load your data — please refresh and try again');
+    return null;
+  }
+
   const cloudEmpty = !cloud || (
     Object.keys(cloud.catalog || {}).length === 0 &&
     Object.keys(cloud.inventory || {}).length === 0
   );
   if (!cloudEmpty) return cloud;
+
+  // Cloud is genuinely empty — try to promote local data to cloud
   const local = await webAPI.loadData();
   const localHasData = local && (
     Object.keys(local.catalog || {}).length > 0 ||
@@ -1458,10 +1493,11 @@ async function migrateLocalToCloudIfNeeded() {
     await supabaseAPI.saveData(local);
     return local;
   }
-  return cloud;
+  return null;
 }
 
 let signInDone = false;
+let dataLoaded = false; // guards sched() from saving before data is confirmed loaded
 async function onSignedIn(user) {
   if (signInDone && currentUser?.id === user.id) return;  // de-dupe concurrent fires
   signInDone = true;
@@ -1477,6 +1513,7 @@ async function onSignedIn(user) {
   unmatched = Array.isArray(data?.unmatched) ? data.unmatched : [];
   if (data) migrateOldData(data);
   rebuildUpcIndex();
+  dataLoaded = true; // permit sched() to save — data is now confirmed loaded
   document.getElementById('dp').textContent = await api.getDataPath();
   console.log('[vault] loaded',
     { catalog: Object.keys(catalog).length, inventory: Object.keys(inventory).length, unmatched: unmatched.length });
@@ -1487,6 +1524,7 @@ async function onSignedIn(user) {
 function onSignedOut() {
   currentUser = null;
   signInDone = false;
+  dataLoaded = false;
   api = webAPI;
   updateUserBadge();
   showAuthOverlay();
@@ -1683,6 +1721,7 @@ async function init() {
     migrateOldData(d);
   }
   rebuildUpcIndex();
+  dataLoaded = true; // permit sched() to save
   renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
   updateStats(); updateBadge();
 
@@ -1828,6 +1867,9 @@ function rebuildUpcIndex() {
 // SAVE
 // ════════════════════════════════════════════════
 function sched() {
+  // Never save before data has been confirmed loaded — prevents overwriting
+  // cloud data with an empty state if the initial load failed or is still in flight
+  if (!dataLoaded) return;
   const pip = document.getElementById('save-pip'), txt = document.getElementById('save-txt');
   pip.className = 'save-pip saving'; txt.textContent = 'Saving…';
   clearTimeout(saveTimer);
