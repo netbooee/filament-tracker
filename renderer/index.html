@@ -187,6 +187,15 @@
   .loc-tag{display:inline-block;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:all .12s;}
   .loc-tag:hover{border-color:var(--teal-mid);color:var(--teal);background:var(--teal-light);}
 
+  /* COLOR GRID VIEW */
+  .color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:10px;padding:4px 0 24px;}
+  .cg-tile{border-radius:14px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;transition:transform .12s,box-shadow .12s;overflow:hidden;padding:6px;}
+  .cg-tile:hover{transform:scale(1.07);box-shadow:0 6px 20px rgba(0,0,0,.22);}
+  .cg-tile.zero{opacity:0.32;filter:saturate(0.4);}
+  .cg-tile.low-stock{box-shadow:0 0 0 2.5px #e05555 inset;}
+  .cg-count{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;}
+  .cg-label{font-size:9px;font-weight:600;text-align:center;margin-top:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0.82;letter-spacing:.01em;}
+
   /* EMPTY */
   .empty{text-align:center;padding:60px 20px;}
   .empty-icon{width:52px;height:52px;margin:0 auto 14px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;}
@@ -443,6 +452,10 @@
         <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Catalog
       </button>
+      <button class="nav-btn" onclick="showView('colors',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/></svg>
+        Color Grid
+      </button>
       <button class="nav-btn" onclick="showView('lowstock',this)">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Low Stock
@@ -494,7 +507,7 @@
         </div>
         <div class="stats-row">
           <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
-          <div class="stat-card"><div class="sc-label">Varieties</div><div class="sc-value" id="s-filaments">0</div></div>
+          <div class="stat-card"><div class="sc-label">Filaments</div><div class="sc-value" id="s-filaments">0</div></div>
           <div class="stat-card"><div class="sc-label">Materials</div><div class="sc-value" id="s-mats">0</div></div>
           <div class="stat-card sc-red" onclick="showView('lowstock')" style="cursor:pointer;" title="View low stock items"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
         </div>
@@ -539,6 +552,14 @@
           <button class="m-sort-btn" id="msort-inv-material" onclick="mobileSort('inv','material')">Material</button>
         </div>
         <div class="m-card-list" id="inv-cards"></div>
+      </div>
+
+      <!-- ════════ COLOR GRID ════════ -->
+      <div class="view" id="view-colors">
+        <div class="page-head">
+          <div><div class="page-title">Color Grid</div><div class="page-sub" id="cg-sub">—</div></div>
+        </div>
+        <div class="color-grid" id="cg-grid"></div>
       </div>
 
       <!-- ════════ LOW STOCK ════════ -->
@@ -904,6 +925,10 @@
   <div class="bn-more-backdrop" onclick="closeMobileMore()"></div>
   <div class="bn-more-panel">
     <div class="bn-more-handle"></div>
+    <button class="bn-more-item" onclick="showView('colors');closeMobileMore()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/></svg>
+      Color Grid
+    </button>
     <button class="bn-more-item" onclick="showView('lowstock');closeMobileMore()">
       <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Low Stock
@@ -1807,6 +1832,7 @@ function showView(n, el) {
   if (n === 'orphans')   renderOrphans();
   if (n === 'unmatched') renderUnmatched();
   if (n === 'lowstock')  renderLowStock();
+  if (n === 'colors')    renderColorGrid();
   closeSidebarOnMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2535,6 +2561,37 @@ function renderLowStock() {
 }
 
 // ════════════════════════════════════════════════
+// RENDER COLOR GRID
+// ════════════════════════════════════════════════
+function renderColorGrid() {
+  const items = Object.values(catalog).map(cat => {
+    const inv = inventory[cat.filamentKey] || {};
+    return { ...cat, count: inv.count || 0, colorSwatch: cat.colorSwatch || inv.colorSwatch };
+  }).sort((a, b) => b.count - a.count || a.color.localeCompare(b.color));
+
+  const total = items.reduce((s, i) => s + i.count, 0);
+  document.getElementById('cg-sub').textContent = `${items.length} filaments · ${total} total spools`;
+
+  if (!items.length) {
+    document.getElementById('cg-grid').innerHTML = `<div class="empty">
+      <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>
+      <h3>No catalog entries</h3><p>Import a catalog to see the color grid.</p></div>`;
+    return;
+  }
+
+  document.getElementById('cg-grid').innerHTML = items.map(it => {
+    const hex = colorHex(it.color, it.colorSwatch);
+    const fg  = contrastColor(hex);
+    const cls = it.count === 0 ? ' zero' : it.count === 1 ? ' low-stock' : '';
+    return `<div class="cg-tile${cls}" style="${hexBg(hex)};color:${fg}"
+      title="${it.name}" onclick="openEditCatalog('${it.filamentKey}')">
+      <div class="cg-count">${it.count}</div>
+      <div class="cg-label">${it.color}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
 // RENDER CATALOG
 // ════════════════════════════════════════════════
 function renderCatalog() {
@@ -3088,6 +3145,13 @@ const COLOR_PALETTE_GROUPS = [
   ]},
 ];
 const COLOR_PALETTE = COLOR_PALETTE_GROUPS.flatMap(g => g.colors);
+
+// Returns white or dark text color for contrast against a swatch
+function contrastColor(hex) {
+  if (!hex || hex === 'rainbow' || !hex.startsWith('#')) return '#fff';
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.52 ? 'rgba(0,0,0,.72)' : '#fff';
+}
 
 // Returns hex/special for a color, using user override if set
 function colorHex(name, override) {
