@@ -1411,11 +1411,18 @@ async function sendMagicLink() {
 
 async function signInWithGoogle() {
   if (!sb) return;
-  const { error } = await sb.auth.signInWithOAuth({
+  // skipBrowserRedirect + manual window.location.href keeps the OAuth flow
+  // inside the same browser/PWA context so the PKCE code verifier in
+  // localStorage is always accessible when the redirect comes back.
+  const { data, error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.pathname }
+    options: {
+      redirectTo: window.location.origin + window.location.pathname,
+      skipBrowserRedirect: true
+    }
   });
-  if (error) setAuthMsg('err', error.message);
+  if (error) { setAuthMsg('err', error.message); return; }
+  if (data?.url) window.location.href = data.url;
 }
 
 function continueLocalOnly() {
@@ -1514,9 +1521,15 @@ async function bootstrapAuth() {
     if (session?.user) {
       await onSignedIn(session.user);
     } else if (event === 'SIGNED_OUT' && signInDone) {
-      // Only react to SIGNED_OUT if we had an active session — prevents
-      // spurious sign-outs fired during PKCE code exchange on mobile
-      onSignedOut();
+      // Double-check before signing out — transient token refresh failures
+      // on mobile can fire SIGNED_OUT even when the session is still valid.
+      const { data: { session: current } } = await sb.auth.getSession();
+      if (current?.user) {
+        // Session is still alive; ignore the spurious event
+        await onSignedIn(current.user);
+      } else {
+        onSignedOut();
+      }
     }
   });
 
