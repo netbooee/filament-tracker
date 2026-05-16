@@ -1528,27 +1528,30 @@ async function bootstrapAuth() {
   // Supabase SDK failed to load: fall back to local
   if (!sb) { init(); return; }
 
-  // iOS PWA: OAuth opens in Safari; when user returns to PWA re-check session
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && !currentUser && sb) {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user) await onSignedIn(session.user);
-    }
-  });
-
-  // Only act on positive auth events. SIGNED_OUT fires spuriously on mobile
-  // (token rotation, network blips, PKCE handshakes) — ignore it here.
-  // Explicit sign-out goes through signOut() which calls onSignedOut() directly.
+  // Only act on positive auth events — SIGNED_OUT is ignored (fires
+  // spuriously on mobile). Explicit sign-out calls onSignedOut() directly.
   sb.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) await onSignedIn(session.user);
   });
 
-  // Supabase v2 with detectSessionInUrl:true processes ?code= automatically in getSession()
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    await onSignedIn(session.user);
+  // After OAuth, the URL contains #access_token=... The SDK processes this
+  // hash asynchronously, so getSession() called immediately returns null.
+  // Detect the callback and let onAuthStateChange fire instead of racing it.
+  const isOAuthCallback = window.location.hash.includes('access_token') ||
+                          window.location.hash.includes('refresh_token') ||
+                          window.location.search.includes('code=');
+
+  if (isOAuthCallback) {
+    // SDK is processing the hash — show login only if nothing fires within 6s
+    setTimeout(() => { if (!currentUser) showAuthOverlay(); }, 6000);
   } else {
-    showAuthOverlay();
+    // Normal load — check for existing session in localStorage
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      await onSignedIn(session.user);
+    } else {
+      showAuthOverlay();
+    }
   }
 }
 
