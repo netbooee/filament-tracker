@@ -43,7 +43,7 @@
   .tb-dot{width:6px;height:6px;border-radius:50%;background:var(--teal-mid);flex-shrink:0;}
 
   /* SIDEBAR */
-  .sidebar{width:216px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 10px 16px;flex-shrink:0;}
+  .sidebar{width:216px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 10px 16px;flex-shrink:0;overflow-y:auto;}
   .nav-section{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:0 10px;margin:18px 0 5px;}
   .nav-section:first-child{margin-top:0;}
   .nav-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:1px solid transparent;background:transparent;font-family:'Figtree',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;width:100%;text-align:left;transition:all 0.13s ease;}
@@ -466,10 +466,6 @@
       <div class="sidebar-foot">
         <div class="save-row"><div class="save-pip" id="save-pip"></div><span id="save-txt">Saved</span></div>
         <div class="data-path" id="dp"></div>
-        <details style="margin-top:8px">
-          <summary style="font-size:10px;color:var(--text3);cursor:pointer;user-select:none">DB log</summary>
-          <pre id="vlog-body" style="font-size:9px;color:var(--text3);margin:4px 0 0;white-space:pre-wrap;max-height:180px;overflow-y:auto;line-height:1.5"></pre>
-        </details>
       </div>
     </nav>
 
@@ -852,6 +848,12 @@
               <li>Tap <strong>Add</strong> in the top-right corner</li>
             </ol>
             <p style="margin-top:10px;">It launches full-screen like a native app with no browser bars.</p>
+          </div>
+
+          <div class="help-section">
+            <div class="help-section-title">🔍 Database diagnostics</div>
+            <p style="margin-bottom:8px">Shows every save and load operation with Supabase. Useful for troubleshooting data sync issues.</p>
+            <pre id="vlog-body" style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;white-space:pre-wrap;min-height:48px;max-height:260px;overflow-y:auto;line-height:1.6;color:var(--text2)">— waiting for activity —</pre>
           </div>
 
         </div>
