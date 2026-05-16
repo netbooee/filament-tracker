@@ -1411,18 +1411,11 @@ async function sendMagicLink() {
 
 async function signInWithGoogle() {
   if (!sb) return;
-  // skipBrowserRedirect + manual window.location.href keeps the OAuth flow
-  // inside the same browser/PWA context so the PKCE code verifier in
-  // localStorage is always accessible when the redirect comes back.
-  const { data, error } = await sb.auth.signInWithOAuth({
+  const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: window.location.origin + window.location.pathname,
-      skipBrowserRedirect: true
-    }
+    options: { redirectTo: window.location.origin + window.location.pathname }
   });
-  if (error) { setAuthMsg('err', error.message); return; }
-  if (data?.url) window.location.href = data.url;
+  if (error) setAuthMsg('err', error.message);
 }
 
 function continueLocalOnly() {
@@ -1435,7 +1428,7 @@ function continueLocalOnly() {
 async function signOut() {
   if (!sb) return;
   await sb.auth.signOut();
-  // auth state change handler will take it from here
+  onSignedOut(); // call directly — we no longer listen for SIGNED_OUT events
 }
 
 function updateUserBadge() {
@@ -1518,19 +1511,12 @@ async function bootstrapAuth() {
                           window.location.search.includes('code=');
 
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-      await onSignedIn(session.user);
-    } else if (event === 'SIGNED_OUT' && signInDone) {
-      // Double-check before signing out — transient token refresh failures
-      // on mobile can fire SIGNED_OUT even when the session is still valid.
-      const { data: { session: current } } = await sb.auth.getSession();
-      if (current?.user) {
-        // Session is still alive; ignore the spurious event
-        await onSignedIn(current.user);
-      } else {
-        onSignedOut();
-      }
-    }
+    // Only act on positive auth events.
+    // SIGNED_OUT is intentionally ignored here — on mobile it fires
+    // spuriously from transient network failures and internal PKCE
+    // token rotation. Sign-out only happens via the explicit signOut()
+    // button, which calls onSignedOut() directly.
+    if (session?.user) await onSignedIn(session.user);
   });
 
   if (isOAuthRedirect) {
