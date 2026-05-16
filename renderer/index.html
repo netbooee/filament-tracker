@@ -192,7 +192,9 @@
   .cg-tile{border-radius:14px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;transition:transform .12s,box-shadow .12s;overflow:hidden;padding:6px;}
   .cg-tile:hover{transform:scale(1.07);box-shadow:0 6px 20px rgba(0,0,0,.22);}
   .cg-tile.zero{opacity:0.32;filter:saturate(0.4);}
-  .cg-tile.low-stock{box-shadow:0 0 0 2.5px #e05555 inset;}
+  .cg-section-label{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--text2);margin:20px 0 8px;text-transform:uppercase;}
+  .cg-section-label:first-child{margin-top:4px;}
+  .cg-section-count{font-size:11px;font-weight:500;color:var(--text3);margin-left:6px;}
   .cg-count{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;}
   .cg-label{font-size:9px;font-weight:600;text-align:center;margin-top:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0.82;letter-spacing:.01em;}
 
@@ -559,7 +561,7 @@
         <div class="page-head">
           <div><div class="page-title">Color Grid</div><div class="page-sub" id="cg-sub">—</div></div>
         </div>
-        <div class="color-grid" id="cg-grid"></div>
+        <div id="cg-grid"></div>
       </div>
 
       <!-- ════════ LOW STOCK ════════ -->
@@ -1107,7 +1109,12 @@
           </optgroup>
         </select>
       </div>
-      <div><label class="f-label">Color *</label><input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0"></div>
+      <div><label class="f-label">Color *</label>
+        <div style="display:flex;align-items:center;gap:8px;margin:0">
+          <div id="ce-swatch-prev" style="width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1px solid rgba(0,0,0,.12);cursor:pointer;transition:transform .12s;" title="Click to choose swatch" onclick="openSwatchPickerForModal()"></div>
+          <input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0;flex:1" oninput="updateCeSwatchPreview()">
+        </div>
+      </div>
     </div>
     <div style="margin-top:12px;">
       <label class="f-label">Name / SKU (auto-generated if blank)</label>
@@ -1343,7 +1350,7 @@ const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
 const sb = (window.supabase && !window.electronAPI)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+      auth: { persistSession: true, detectSessionInUrl: true, storageKey: 'fv-auth' }
     })
   : null;
 
@@ -1486,24 +1493,35 @@ function onSignedOut() {
 }
 
 async function bootstrapAuth() {
-  // Electron: skip auth entirely
   if (window.electronAPI) { init(); return; }
-  // User previously chose local-only: skip auth
   if (localStorage.getItem('fv-local-only') === '1') { init(); return; }
-  // Supabase SDK failed to load: fall back to local
   if (!sb) { init(); return; }
 
-  // Listen for auth state changes (magic-link redirect completes here too)
-  sb.auth.onAuthStateChange((event, session) => {
-    if (session?.user) onSignedIn(session.user);
+  // Detect OAuth redirect (implicit: #access_token, PKCE: ?code=)
+  const isOAuthRedirect = window.location.hash.includes('access_token') ||
+                          window.location.search.includes('code=');
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) await onSignedIn(session.user);
     else if (event === 'SIGNED_OUT') onSignedOut();
   });
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    await onSignedIn(session.user);
+  if (isOAuthRedirect) {
+    // Let onAuthStateChange handle the token — don't flash login screen
+    // Safety net: show login if no session after 6s
+    setTimeout(async () => {
+      if (!currentUser) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session?.user) showAuthOverlay();
+      }
+    }, 6000);
   } else {
-    showAuthOverlay();
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      await onSignedIn(session.user);
+    } else {
+      showAuthOverlay();
+    }
   }
 }
 
@@ -1522,6 +1540,7 @@ function closeSidebarOnMobile() {
 let editKey        = null;
 let editUpcList    = [];   // working copy of upcs during edit
 let catalogEditKey = null;
+let ceSwatchOverride = null; // user-chosen swatch override for modal in progress
 let ceUpcList      = [];   // working copy of upcs during catalog edit
 let resolveUpc     = null;
 let orphanUpc      = null;
@@ -2564,30 +2583,46 @@ function renderLowStock() {
 // RENDER COLOR GRID
 // ════════════════════════════════════════════════
 function renderColorGrid() {
-  const items = Object.values(catalog).map(cat => {
+  const allItems = Object.values(catalog).map(cat => {
     const inv = inventory[cat.filamentKey] || {};
     return { ...cat, count: inv.count || 0, colorSwatch: cat.colorSwatch || inv.colorSwatch };
-  }).sort((a, b) => b.count - a.count || a.color.localeCompare(b.color));
+  });
 
-  const total = items.reduce((s, i) => s + i.count, 0);
-  document.getElementById('cg-sub').textContent = `${items.length} filaments · ${total} total spools`;
+  const total = allItems.reduce((s, i) => s + i.count, 0);
+  document.getElementById('cg-sub').textContent = `${allItems.length} filaments · ${total} total spools`;
 
-  if (!items.length) {
+  if (!allItems.length) {
     document.getElementById('cg-grid').innerHTML = `<div class="empty">
       <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>
       <h3>No catalog entries</h3><p>Import a catalog to see the color grid.</p></div>`;
     return;
   }
 
-  document.getElementById('cg-grid').innerHTML = items.map(it => {
-    const hex = colorHex(it.color, it.colorSwatch);
-    const fg  = contrastColor(hex);
-    const cls = it.count === 0 ? ' zero' : it.count === 1 ? ' low-stock' : '';
-    return `<div class="cg-tile${cls}" style="${hexBg(hex)};color:${fg}"
-      title="${it.name}" onclick="openEditCatalog('${it.filamentKey}')">
-      <div class="cg-count">${it.count}</div>
-      <div class="cg-label">${it.color}</div>
-    </div>`;
+  // Group by filamentType, sort groups by total count desc
+  const groupMap = {};
+  allItems.forEach(it => {
+    const t = it.filamentType || 'Other';
+    if (!groupMap[t]) groupMap[t] = [];
+    groupMap[t].push(it);
+  });
+  const groups = Object.entries(groupMap)
+    .sort(([,a],[,b]) => b.reduce((s,i)=>s+i.count,0) - a.reduce((s,i)=>s+i.count,0));
+  groups.forEach(([,items]) => items.sort((a,b) => b.count - a.count || a.color.localeCompare(b.color)));
+
+  document.getElementById('cg-grid').innerHTML = groups.map(([type, items]) => {
+    const tiles = items.map(it => {
+      const hex = colorHex(it.color, it.colorSwatch);
+      const fg  = contrastColor(hex);
+      const cls = it.count === 0 ? ' zero' : '';
+      return `<div class="cg-tile${cls}" style="${hexBg(hex)};color:${fg}"
+        title="${it.name}" onclick="openEditCatalog('${it.filamentKey}')">
+        <div class="cg-count">${it.count}</div>
+        <div class="cg-label">${it.color}</div>
+      </div>`;
+    }).join('');
+    const groupTotal = items.reduce((s,i)=>s+i.count,0);
+    return `<div class="cg-section-label">${type || 'Other'} <span class="cg-section-count">${groupTotal}</span></div>
+      <div class="color-grid" style="padding:0 0 16px;">${tiles}</div>`;
   }).join('');
 }
 
@@ -2824,6 +2859,7 @@ function openAddCatalog() {
   document.getElementById('ce-sub').textContent   = 'New filament entry';
   document.getElementById('ce-del-btn').style.display = 'none';
   ['ce-brand','ce-mat','ce-color','ce-name'].forEach(id => document.getElementById(id).value = '');
+  ceSwatchOverride = null; updateCeSwatchPreview();
   document.getElementById('ce-ftype').value = '';
   renderCeUpcList();
   document.getElementById('ov-catalog').classList.add('open');
@@ -2839,6 +2875,7 @@ function openEditCatalog(key) {
   document.getElementById('ce-brand').value  = it.brand || '';
   document.getElementById('ce-mat').value    = it.material || '';
   setSelectCI('ce-ftype', it.filamentType || '');
+  ceSwatchOverride = it.colorSwatch || null; updateCeSwatchPreview();
   document.getElementById('ce-color').value  = it.color || '';
   document.getElementById('ce-name').value   = it.name || '';
   renderCeUpcList();
@@ -2884,7 +2921,8 @@ function saveCatalogEntry() {
     catalog[catalogEditKey].upcs.forEach(upc => { if (upcIndex[upc] === catalogEditKey) delete upcIndex[upc]; });
   }
 
-  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false };
+  const swatchToSave = ceSwatchOverride || (catalog[catalogEditKey]?.colorSwatch && catalog[catalogEditKey].color === color ? catalog[catalogEditKey].colorSwatch : undefined);
+  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false, ...(swatchToSave ? {colorSwatch: swatchToSave} : {}) };
   catalog[newKey] = entry;
 
   // Rename inventory key if identity changed
@@ -3208,6 +3246,12 @@ function renderSwatchGrid() {
 function selectSwatchColor(hex) { swatchPickHex = hex; renderSwatchGrid(); }
 
 function saveSwatchPick() {
+  if (swatchPickKey === '__modal__') {
+    ceSwatchOverride = swatchPickHex;
+    updateCeSwatchPreview();
+    closeSwatchPicker();
+    return;
+  }
   if (!swatchPickKey || !catalog[swatchPickKey]) return;
   catalog[swatchPickKey].colorSwatch = swatchPickHex;
   if (inventory[swatchPickKey]) inventory[swatchPickKey].colorSwatch = swatchPickHex;
@@ -3220,6 +3264,22 @@ function saveSwatchPick() {
 function closeSwatchPicker() {
   document.getElementById('ov-swatch').classList.remove('open');
   swatchPickKey = null; swatchPickHex = null;
+}
+
+function updateCeSwatchPreview() {
+  const color = document.getElementById('ce-color')?.value.trim() || '';
+  const hex = ceSwatchOverride || autoSwatch(color) || '#E8EAEE';
+  const el = document.getElementById('ce-swatch-prev');
+  if (el) el.style.cssText = `width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1px solid rgba(0,0,0,.12);cursor:pointer;transition:transform .12s;${hexBg(hex)}`;
+}
+
+function openSwatchPickerForModal() {
+  const color = document.getElementById('ce-color')?.value.trim() || '';
+  swatchPickKey = '__modal__';
+  swatchPickHex = ceSwatchOverride || autoSwatch(color) || '#E8EAEE';
+  document.getElementById('sw-name').textContent = color || 'Choose swatch';
+  renderSwatchGrid();
+  document.getElementById('ov-swatch').classList.add('open');
 }
 
 function openHelpModal()    { document.getElementById('ov-help').classList.add('open'); }
