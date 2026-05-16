@@ -1350,7 +1350,7 @@ const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
 const sb = (window.supabase && !window.electronAPI)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, detectSessionInUrl: true, storageKey: 'fv-auth' }
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
     })
   : null;
 
@@ -1497,13 +1497,27 @@ async function bootstrapAuth() {
   if (localStorage.getItem('fv-local-only') === '1') { init(); return; }
   if (!sb) { init(); return; }
 
+  // iOS PWA: after OAuth, Safari handles the redirect in a separate context.
+  // When user switches back to the PWA, re-check for a session.
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && !currentUser && sb) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) await onSignedIn(session.user);
+    }
+  });
+
   // Detect OAuth redirect (implicit: #access_token, PKCE: ?code=)
   const isOAuthRedirect = window.location.hash.includes('access_token') ||
                           window.location.search.includes('code=');
 
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) await onSignedIn(session.user);
-    else if (event === 'SIGNED_OUT') onSignedOut();
+    if (session?.user) {
+      await onSignedIn(session.user);
+    } else if (event === 'SIGNED_OUT' && signInDone) {
+      // Only react to SIGNED_OUT if we had an active session — prevents
+      // spurious sign-outs fired during PKCE code exchange on mobile
+      onSignedOut();
+    }
   });
 
   if (isOAuthRedirect) {
