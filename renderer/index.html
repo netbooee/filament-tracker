@@ -466,6 +466,10 @@
       <div class="sidebar-foot">
         <div class="save-row"><div class="save-pip" id="save-pip"></div><span id="save-txt">Saved</span></div>
         <div class="data-path" id="dp"></div>
+        <details style="margin-top:8px">
+          <summary style="font-size:10px;color:var(--text3);cursor:pointer;user-select:none">DB log</summary>
+          <pre id="vlog-body" style="font-size:9px;color:var(--text3);margin:4px 0 0;white-space:pre-wrap;max-height:180px;overflow-y:auto;line-height:1.5"></pre>
+        </details>
       </div>
     </nav>
 
@@ -1299,33 +1303,67 @@ const sb = (window.supabase && !window.electronAPI)
 
 let currentUser = null;
 
+// ── Vault diagnostics (visible in app) ──
+const vaultLog = [];
+function vlogAdd(msg) {
+  const ts = new Date().toLocaleTimeString();
+  vaultLog.unshift(`${ts}  ${msg}`);
+  if (vaultLog.length > 20) vaultLog.pop();
+  const el = document.getElementById('vlog-body');
+  if (el) el.textContent = vaultLog.join('\n');
+}
+
 const supabaseAPI = {
   loadData: async () => {
-    if (!currentUser) return null;
-    // Use limit(1) instead of maybeSingle() so duplicate rows don't cause errors
+    if (!currentUser) { vlogAdd('LOAD skip — no user'); return null; }
+    vlogAdd(`LOAD start uid=${currentUser.id.slice(0,8)}`);
     const { data, error } = await sb.from('vault')
-      .select('data').eq('user_id', currentUser.id)
-      .order('updated_at', { ascending: false }).limit(1);
-    if (error) { console.error('vault load', error); return null; }
-    if (!data || data.length === 0) {
-      await sb.from('vault').insert({ user_id: currentUser.id, data: {} });
+      .select('data').eq('user_id', currentUser.id);
+    if (error) {
+      vlogAdd(`LOAD ERROR: ${error.message} (code ${error.code})`);
+      console.error('vault load', error);
       return null;
     }
-    return data[0].data;
+    vlogAdd(`LOAD rows=${data?.length ?? 0}`);
+    if (!data || data.length === 0) {
+      const { error: ie } = await sb.from('vault').insert({ user_id: currentUser.id, data: {} });
+      vlogAdd(ie ? `INSERT ERROR: ${ie.message}` : 'INSERT empty row OK');
+      return null;
+    }
+    // Pick the row with the most catalog entries (handles duplicate rows)
+    const best = data.reduce((b, r) => {
+      const bc = Object.keys(b?.catalog || {}).length;
+      const rc = Object.keys(r.data?.catalog || {}).length;
+      return rc > bc ? r.data : b;
+    }, data[0].data);
+    vlogAdd(`LOAD OK catalog=${Object.keys(best?.catalog||{}).length} inv=${Object.keys(best?.inventory||{}).length}`);
+    return best;
   },
   saveData: async (d) => {
     if (!currentUser) return { success: false, error: 'not signed in' };
-    // UPDATE existing row first — works regardless of unique constraint setup
+    const cat = Object.keys(d.catalog||{}).length, inv = Object.keys(d.inventory||{}).length;
+    vlogAdd(`SAVE start catalog=${cat} inv=${inv}`);
     const { data: updated, error: updateErr } = await sb.from('vault')
-      .update({ data: d, updated_at: new Date().toISOString() })
+      .update({ data: d })
       .eq('user_id', currentUser.id)
       .select('user_id');
-    if (updateErr) { console.error('vault update', updateErr); return { success: false, error: updateErr.message }; }
-    // If no row existed yet, INSERT one
+    if (updateErr) {
+      vlogAdd(`UPDATE ERROR: ${updateErr.message} (code ${updateErr.code})`);
+      console.error('vault update', updateErr);
+      return { success: false, error: updateErr.message };
+    }
     if (!updated || updated.length === 0) {
+      vlogAdd('UPDATE hit 0 rows — trying INSERT');
       const { error: insertErr } = await sb.from('vault')
-        .insert({ user_id: currentUser.id, data: d, updated_at: new Date().toISOString() });
-      if (insertErr) { console.error('vault insert', insertErr); return { success: false, error: insertErr.message }; }
+        .insert({ user_id: currentUser.id, data: d });
+      if (insertErr) {
+        vlogAdd(`INSERT ERROR: ${insertErr.message} (code ${insertErr.code})`);
+        console.error('vault insert', insertErr);
+        return { success: false, error: insertErr.message };
+      }
+      vlogAdd('INSERT OK');
+    } else {
+      vlogAdd(`UPDATE OK rows=${updated.length}`);
     }
     return { success: true };
   },
