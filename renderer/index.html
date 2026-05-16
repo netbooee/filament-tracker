@@ -1299,7 +1299,7 @@ const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
 const sb = (window.supabase && !window.electronAPI)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'implicit' }
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
     })
   : null;
 
@@ -1494,20 +1494,29 @@ async function onSignedIn(user) {
   dataLoaded = true; // sched() may now save
   document.getElementById('dp').textContent = 'Supabase · ' + (user.email || '');
 
-  // 2. Pull from Supabase in background — if it has more data, update
+  // If local is empty, show a loading hint while we wait for cloud
+  if (localCount === 0) {
+    document.getElementById('inv-sub').textContent = 'Loading from cloud…';
+    document.getElementById('cat-sub') && (document.getElementById('cat-sub').textContent = 'Loading from cloud…');
+  }
+
+  // 2. Pull from Supabase — if it has more data, apply it
   pullFromCloud().then(cloud => {
-    if (!cloud) return;
-    const cloudCount = Object.keys(cloud.catalog || {}).length;
+    const cloudCount = Object.keys(cloud?.catalog || {}).length;
     vlogAdd(`CLOUD load: catalog=${cloudCount}`);
     if (cloudCount > localCount) {
       vlogAdd('CLOUD has more data — applying');
       applyData(cloud);
       saveUserLocal({ catalog, inventory, upcIndex, unmatched });
     } else if (localCount > 0 && cloudCount === 0) {
-      // local has data but cloud is empty — push local up
       vlogAdd('Pushing local data to cloud');
       syncToCloud({ catalog, inventory, upcIndex, unmatched });
+    } else if (cloudCount === 0 && localCount === 0) {
+      document.getElementById('inv-sub').textContent = 'No data yet — import your catalog to get started';
     }
+  }).catch(e => {
+    vlogAdd(`CLOUD pull failed: ${e.message}`);
+    if (localCount === 0) document.getElementById('inv-sub').textContent = 'Cloud unavailable — import to get started';
   });
 }
 
@@ -1529,29 +1538,19 @@ async function bootstrapAuth() {
   if (!sb) { init(); return; }
 
   // Only act on positive auth events — SIGNED_OUT is ignored (fires
-  // spuriously on mobile). Explicit sign-out calls onSignedOut() directly.
+  // spuriously). Explicit sign-out calls onSignedOut() directly.
   sb.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) await onSignedIn(session.user);
   });
 
-  // After OAuth, the URL contains #access_token=... The SDK processes this
-  // hash asynchronously, so getSession() called immediately returns null.
-  // Detect the callback and let onAuthStateChange fire instead of racing it.
-  const isOAuthCallback = window.location.hash.includes('access_token') ||
-                          window.location.hash.includes('refresh_token') ||
-                          window.location.search.includes('code=');
-
-  if (isOAuthCallback) {
-    // SDK is processing the hash — show login only if nothing fires within 6s
-    setTimeout(() => { if (!currentUser) showAuthOverlay(); }, 6000);
+  // With PKCE + detectSessionInUrl:true, getSession() automatically exchanges
+  // the ?code= OAuth param for a session — handles both normal load and OAuth callback.
+  const { data: { session }, error } = await sb.auth.getSession();
+  vlogAdd(`getSession: user=${session?.user?.email || 'none'} err=${error?.message || 'none'}`);
+  if (session?.user) {
+    await onSignedIn(session.user);
   } else {
-    // Normal load — check for existing session in localStorage
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      await onSignedIn(session.user);
-    } else {
-      showAuthOverlay();
-    }
+    showAuthOverlay();
   }
 }
 
