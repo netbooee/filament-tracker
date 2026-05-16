@@ -168,16 +168,6 @@
 
   .swatch-cell{display:inline-flex;align-items:center;gap:8px;}
   .swatch{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.1);flex-shrink:0;}
-  .swatch.clickable{cursor:pointer;transition:transform .12s,box-shadow .12s;}
-  .swatch.clickable:hover{transform:scale(1.25);box-shadow:0 1px 4px rgba(0,0,0,.18);}
-  /* Swatch picker modal */
-  .sp-groups{max-height:55vh;overflow-y:auto;padding-right:4px;}
-  .sp-group-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:10px 0 5px;}
-  .sp-group-label:first-child{margin-top:0;}
-  .sp-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
-  .sp-dot{width:32px;height:32px;border-radius:7px;border:2px solid transparent;cursor:pointer;transition:transform .1s,border-color .1s;box-shadow:0 1px 3px rgba(0,0,0,.12);}
-  .sp-dot:hover{transform:scale(1.15);}
-  .sp-dot.active{border-color:var(--ink);transform:scale(1.15);}
   .upc-mono{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.04em;}
   .cnt-group{display:flex;align-items:center;gap:6px;}
   .cnt-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:700;min-width:26px;text-align:center;color:var(--teal);font-variant-numeric:tabular-nums;letter-spacing:-0.01em;}
@@ -186,17 +176,6 @@
   .cnt-btn:hover{border-color:var(--teal-mid);color:var(--teal);background:var(--teal-light);}
   .loc-tag{display:inline-block;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:all .12s;}
   .loc-tag:hover{border-color:var(--teal-mid);color:var(--teal);background:var(--teal-light);}
-
-  /* COLOR GRID VIEW */
-  .color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:10px;padding:4px 0 24px;}
-  .cg-tile{border-radius:14px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;transition:transform .12s,box-shadow .12s;overflow:hidden;padding:6px;}
-  .cg-tile:hover{transform:scale(1.07);box-shadow:0 6px 20px rgba(0,0,0,.22);}
-  .cg-tile.zero{opacity:0.32;filter:saturate(0.4);}
-  .cg-section-label{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--text2);margin:20px 0 8px;text-transform:uppercase;}
-  .cg-section-label:first-child{margin-top:4px;}
-  .cg-section-count{font-size:11px;font-weight:500;color:var(--text3);margin-left:6px;}
-  .cg-count{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;}
-  .cg-label{font-size:9px;font-weight:600;text-align:center;margin-top:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0.82;letter-spacing:.01em;}
 
   /* EMPTY */
   .empty{text-align:center;padding:60px 20px;}
@@ -362,8 +341,6 @@
   .m-card.low-stock{border-color:var(--red-border);}
   .m-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
   .m-swatch{width:38px;height:38px;border-radius:8px;flex-shrink:0;border:1px solid rgba(0,0,0,.08);}
-  .m-swatch.clickable{cursor:pointer;transition:transform .12s,box-shadow .12s;}
-  .m-swatch.clickable:hover{transform:scale(1.1);box-shadow:0 2px 8px rgba(0,0,0,.18);}
   .m-card-info{flex:1;min-width:0;}
   .m-card-name{font-weight:600;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .m-card-meta{font-size:11.5px;color:var(--text3);margin-top:2px;}
@@ -454,10 +431,6 @@
         <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Catalog
       </button>
-      <button class="nav-btn" onclick="showView('colors',this)">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/></svg>
-        Color Grid
-      </button>
       <button class="nav-btn" onclick="showView('lowstock',this)">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Low Stock
@@ -509,7 +482,7 @@
         </div>
         <div class="stats-row">
           <div class="stat-card sc-teal"><div class="sc-label">Total Spools</div><div class="sc-value" id="s-total">0</div></div>
-          <div class="stat-card"><div class="sc-label">Filaments</div><div class="sc-value" id="s-filaments">0</div></div>
+          <div class="stat-card"><div class="sc-label">Varieties</div><div class="sc-value" id="s-filaments">0</div></div>
           <div class="stat-card"><div class="sc-label">Materials</div><div class="sc-value" id="s-mats">0</div></div>
           <div class="stat-card sc-red" onclick="showView('lowstock')" style="cursor:pointer;" title="View low stock items"><div class="sc-label">Low Stock</div><div class="sc-value" id="s-low">0</div></div>
         </div>
@@ -554,14 +527,6 @@
           <button class="m-sort-btn" id="msort-inv-material" onclick="mobileSort('inv','material')">Material</button>
         </div>
         <div class="m-card-list" id="inv-cards"></div>
-      </div>
-
-      <!-- ════════ COLOR GRID ════════ -->
-      <div class="view" id="view-colors">
-        <div class="page-head">
-          <div><div class="page-title">Color Grid</div><div class="page-sub" id="cg-sub">—</div></div>
-        </div>
-        <div id="cg-grid"></div>
       </div>
 
       <!-- ════════ LOW STOCK ════════ -->
@@ -927,10 +892,6 @@
   <div class="bn-more-backdrop" onclick="closeMobileMore()"></div>
   <div class="bn-more-panel">
     <div class="bn-more-handle"></div>
-    <button class="bn-more-item" onclick="showView('colors');closeMobileMore()">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/></svg>
-      Color Grid
-    </button>
     <button class="bn-more-item" onclick="showView('lowstock');closeMobileMore()">
       <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Low Stock
@@ -1109,12 +1070,7 @@
           </optgroup>
         </select>
       </div>
-      <div><label class="f-label">Color *</label>
-        <div style="display:flex;align-items:center;gap:8px;margin:0">
-          <div id="ce-swatch-prev" style="width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1px solid rgba(0,0,0,.12);cursor:pointer;transition:transform .12s;" title="Click to choose swatch" onclick="openSwatchPickerForModal()"></div>
-          <input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0;flex:1" oninput="updateCeSwatchPreview()">
-        </div>
-      </div>
+      <div><label class="f-label">Color *</label><input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0"></div>
     </div>
     <div style="margin-top:12px;">
       <label class="f-label">Name / SKU (auto-generated if blank)</label>
@@ -1226,19 +1182,6 @@
     <div class="modal-foot">
       <button class="btn btn-g btn-sm" onclick="closeAddSpool()">Close</button>
       <button class="btn btn-p btn-sm" onclick="saveAddSpool()">Add to Inventory</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODAL: Swatch Picker ══ -->
-<div class="overlay" id="ov-swatch">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-title">Choose Color Swatch</div>
-    <div class="modal-sub" id="sw-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
-    <div class="sp-groups" id="sw-grid"></div>
-    <div class="modal-foot">
-      <button class="btn btn-g btn-sm" onclick="closeSwatchPicker()">Cancel</button>
-      <button class="btn btn-p btn-sm" onclick="saveSwatchPick()">Save</button>
     </div>
   </div>
 </div>
@@ -1359,6 +1302,7 @@ let currentUser = null;
 const supabaseAPI = {
   loadData: async () => {
     if (!currentUser) return null;
+    // Use limit(1) instead of maybeSingle() so duplicate rows don't cause errors
     const { data, error } = await sb.from('vault')
       .select('data').eq('user_id', currentUser.id)
       .order('updated_at', { ascending: false }).limit(1);
@@ -1371,6 +1315,7 @@ const supabaseAPI = {
   },
   saveData: async (d) => {
     if (!currentUser) return { success: false, error: 'not signed in' };
+    // onConflict:'user_id' updates the existing row rather than inserting a new one
     const { error } = await sb.from('vault').upsert(
       { user_id: currentUser.id, data: d, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
@@ -1430,7 +1375,7 @@ function continueLocalOnly() {
 async function signOut() {
   if (!sb) return;
   await sb.auth.signOut();
-  onSignedOut(); // call directly — we no longer listen for SIGNED_OUT events
+  onSignedOut(); // call directly — SIGNED_OUT event is intentionally ignored
 }
 
 function updateUserBadge() {
@@ -1445,48 +1390,12 @@ function updateUserBadge() {
 
 // Merge local inventory into cloud on first sign-in (if cloud is empty)
 async function migrateLocalToCloudIfNeeded() {
-  // Load from cloud, but distinguish a real error from genuinely empty data
-  let cloud = null, cloudLoadFailed = false;
-  try {
-    const { data, error } = await sb.from('vault')
-      .select('data').eq('user_id', currentUser.id)
-      .order('updated_at', { ascending: false }).limit(1);
-    if (error) {
-      cloudLoadFailed = true;
-      console.error('[vault] cloud load error:', error);
-    } else if (data && data.length > 0) {
-      cloud = data[0].data;
-    } else {
-      // No row yet — insert an empty placeholder so upserts work later
-      await sb.from('vault').insert({ user_id: currentUser.id, data: {} }).select();
-    }
-  } catch(e) {
-    cloudLoadFailed = true;
-    console.error('[vault] cloud load exception:', e);
-  }
-
-  // If the load errored, fall back to localStorage rather than wiping cloud
-  if (cloudLoadFailed) {
-    const local = await webAPI.loadData();
-    const localHasData = local && (
-      Object.keys(local.catalog || {}).length > 0 ||
-      Object.keys(local.inventory || {}).length > 0
-    );
-    if (localHasData) {
-      toast('⚠ Cloud sync error — showing local backup');
-      return local;
-    }
-    toast('⚠ Could not load your data — please refresh and try again');
-    return null;
-  }
-
+  const cloud = await supabaseAPI.loadData();
   const cloudEmpty = !cloud || (
     Object.keys(cloud.catalog || {}).length === 0 &&
     Object.keys(cloud.inventory || {}).length === 0
   );
   if (!cloudEmpty) return cloud;
-
-  // Cloud is genuinely empty — try to promote local data to cloud
   const local = await webAPI.loadData();
   const localHasData = local && (
     Object.keys(local.catalog || {}).length > 0 ||
@@ -1496,11 +1405,11 @@ async function migrateLocalToCloudIfNeeded() {
     await supabaseAPI.saveData(local);
     return local;
   }
-  return null;
+  return cloud;
 }
 
 let signInDone = false;
-let dataLoaded = false; // guards sched() from saving before data is confirmed loaded
+let dataLoaded = false; // guard — sched() must not save before data is confirmed loaded
 async function onSignedIn(user) {
   if (signInDone && currentUser?.id === user.id) return;  // de-dupe concurrent fires
   signInDone = true;
@@ -1534,12 +1443,14 @@ function onSignedOut() {
 }
 
 async function bootstrapAuth() {
+  // Electron: skip auth entirely
   if (window.electronAPI) { init(); return; }
+  // User previously chose local-only: skip auth
   if (localStorage.getItem('fv-local-only') === '1') { init(); return; }
+  // Supabase SDK failed to load: fall back to local
   if (!sb) { init(); return; }
 
-  // iOS PWA: after OAuth, Safari handles the redirect in a separate context.
-  // When user switches back to the PWA, re-check for a session.
+  // iOS PWA: OAuth opens in Safari; when user returns to PWA re-check session
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && !currentUser && sb) {
       const { data: { session } } = await sb.auth.getSession();
@@ -1547,17 +1458,14 @@ async function bootstrapAuth() {
     }
   });
 
+  // Only act on positive auth events. SIGNED_OUT fires spuriously on mobile
+  // (token rotation, network blips, PKCE handshakes) — ignore it here.
+  // Explicit sign-out goes through signOut() which calls onSignedOut() directly.
   sb.auth.onAuthStateChange(async (event, session) => {
-    // Only act on positive auth events.
-    // SIGNED_OUT is intentionally ignored here — on mobile it fires
-    // spuriously from transient network failures and internal PKCE
-    // token rotation. Sign-out only happens via the explicit signOut()
-    // button, which calls onSignedOut() directly.
     if (session?.user) await onSignedIn(session.user);
   });
 
-  // In Supabase v2 with detectSessionInUrl:true, getSession() automatically
-  // processes the ?code= OAuth redirect parameter — no separate detection needed.
+  // Supabase v2 with detectSessionInUrl:true processes ?code= automatically in getSession()
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
     await onSignedIn(session.user);
@@ -1581,7 +1489,6 @@ function closeSidebarOnMobile() {
 let editKey        = null;
 let editUpcList    = [];   // working copy of upcs during edit
 let catalogEditKey = null;
-let ceSwatchOverride = null; // user-chosen swatch override for modal in progress
 let ceUpcList      = [];   // working copy of upcs during catalog edit
 let resolveUpc     = null;
 let orphanUpc      = null;
@@ -1711,7 +1618,6 @@ async function init() {
     migrateOldData(d);
   }
   rebuildUpcIndex();
-  dataLoaded = true; // permit sched() to save
   renderInv(); renderCatalog(); renderOrphans(); renderUnmatched();
   updateStats(); updateBadge();
 
@@ -1857,9 +1763,7 @@ function rebuildUpcIndex() {
 // SAVE
 // ════════════════════════════════════════════════
 function sched() {
-  // Never save before data has been confirmed loaded — prevents overwriting
-  // cloud data with an empty state if the initial load failed or is still in flight
-  if (!dataLoaded) return;
+  if (!dataLoaded) return; // never save before data is confirmed loaded from cloud
   const pip = document.getElementById('save-pip'), txt = document.getElementById('save-txt');
   pip.className = 'save-pip saving'; txt.textContent = 'Saving…';
   clearTimeout(saveTimer);
@@ -1896,7 +1800,6 @@ function showView(n, el) {
   if (n === 'orphans')   renderOrphans();
   if (n === 'unmatched') renderUnmatched();
   if (n === 'lowstock')  renderLowStock();
-  if (n === 'colors')    renderColorGrid();
   closeSidebarOnMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2418,11 +2321,11 @@ function renderInv() {
       </div>`;
     } else {
       container.innerHTML = items.map(it => {
-        const hex = colorHex(it.color, it.colorSwatch), low = it.count <= 1;
+        const hex = colorHex(it.color), low = it.count <= 1;
         const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
         return `<div class="m-card${low ? ' low-stock' : ''}">
           <div class="m-card-head">
-            <div class="m-swatch" style="${hexBg(hex)}"></div>
+            <div class="m-swatch" style="background:${hex}"></div>
             <div class="m-card-info">
               <div class="m-card-name">${it.name}</div>
               <div class="m-card-meta">${meta}</div>
@@ -2458,7 +2361,7 @@ function renderInv() {
   }
 
   tb.innerHTML = items.map(it => {
-    const hex = colorHex(it.color, it.colorSwatch), low = it.count <= 1;
+    const hex = colorHex(it.color), low = it.count <= 1;
     const upcHtml = (it.upcs || []).map(u =>
       `<span class="upc-pill ${orphanUpcs.has(u) ? 'orphan' : ''}">${u}</span>`
     ).join('');
@@ -2468,7 +2371,7 @@ function renderInv() {
           ${starIcon(it.essential)}
         </button>
       </td>
-      <td><div class="swatch-cell"><div class="swatch" style="${hexBg(hex)}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
       <td style="font-weight:600;color:var(--ink)">${it.name}</td>
       <td style="color:var(--text3)">${it.brand}</td>
       <td><span class="mat-chip">${it.material}</span></td>
@@ -2556,11 +2459,11 @@ function renderLowStock() {
       </div>`;
     } else {
       container.innerHTML = items.map(it => {
-        const hex = colorHex(it.color, it.colorSwatch);
+        const hex = colorHex(it.color);
         const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
         return `<div class="m-card low-stock">
           <div class="m-card-head">
-            <div class="m-swatch" style="${hexBg(hex)}"></div>
+            <div class="m-swatch" style="background:${hex}"></div>
             <div class="m-card-info">
               <div class="m-card-name">${it.name}</div>
               <div class="m-card-meta">${meta}</div>
@@ -2595,7 +2498,7 @@ function renderLowStock() {
   }
 
   tb.innerHTML = items.map(it => {
-    const hex = colorHex(it.color, it.colorSwatch);
+    const hex = colorHex(it.color);
     const upcHtml = (it.upcs || []).map(u =>
       `<span class="upc-pill ${orphanUpcs.has(u) ? 'orphan' : ''}">${u}</span>`
     ).join('');
@@ -2605,7 +2508,7 @@ function renderLowStock() {
           ${starIcon(it.essential)}
         </button>
       </td>
-      <td><div class="swatch-cell"><div class="swatch" style="${hexBg(hex)}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
       <td style="font-weight:600;color:var(--ink)">${it.name}</td>
       <td style="color:var(--text3)">${it.brand}</td>
       <td><span class="mat-chip">${it.material}</span></td>
@@ -2622,53 +2525,6 @@ function renderLowStock() {
   }).join('');
 
   updateSortHeaders('ls-tbody', lsSort);
-}
-
-// ════════════════════════════════════════════════
-// RENDER COLOR GRID
-// ════════════════════════════════════════════════
-function renderColorGrid() {
-  const allItems = Object.values(catalog).map(cat => {
-    const inv = inventory[cat.filamentKey] || {};
-    return { ...cat, count: inv.count || 0, colorSwatch: cat.colorSwatch || inv.colorSwatch };
-  });
-
-  const total = allItems.reduce((s, i) => s + i.count, 0);
-  document.getElementById('cg-sub').textContent = `${allItems.length} filaments · ${total} total spools`;
-
-  if (!allItems.length) {
-    document.getElementById('cg-grid').innerHTML = `<div class="empty">
-      <div class="empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></div>
-      <h3>No catalog entries</h3><p>Import a catalog to see the color grid.</p></div>`;
-    return;
-  }
-
-  // Group by filamentType, sort groups by total count desc
-  const groupMap = {};
-  allItems.forEach(it => {
-    const t = it.filamentType || 'Other';
-    if (!groupMap[t]) groupMap[t] = [];
-    groupMap[t].push(it);
-  });
-  const groups = Object.entries(groupMap)
-    .sort(([,a],[,b]) => b.reduce((s,i)=>s+i.count,0) - a.reduce((s,i)=>s+i.count,0));
-  groups.forEach(([,items]) => items.sort((a,b) => b.count - a.count || a.color.localeCompare(b.color)));
-
-  document.getElementById('cg-grid').innerHTML = groups.map(([type, items]) => {
-    const tiles = items.map(it => {
-      const hex = colorHex(it.color, it.colorSwatch);
-      const fg  = contrastColor(hex);
-      const cls = it.count === 0 ? ' zero' : '';
-      return `<div class="cg-tile${cls}" style="${hexBg(hex)};color:${fg}"
-        title="${it.name}" onclick="openEditCatalog('${it.filamentKey}')">
-        <div class="cg-count">${it.count}</div>
-        <div class="cg-label">${it.color}</div>
-      </div>`;
-    }).join('');
-    const groupTotal = items.reduce((s,i)=>s+i.count,0);
-    return `<div class="cg-section-label">${type || 'Other'} <span class="cg-section-count">${groupTotal}</span></div>
-      <div class="color-grid" style="padding:0 0 16px;">${tiles}</div>`;
-  }).join('');
 }
 
 // ════════════════════════════════════════════════
@@ -2731,7 +2587,7 @@ function renderCatalog() {
       </div>`;
     } else {
       container.innerHTML = items.map(it => {
-        const hex = colorHex(it.color, it.colorSwatch);
+        const hex = colorHex(it.color);
         const inInv = inventory[it.filamentKey];
         const meta = [it.brand, it.material, it.filamentType].filter(Boolean).join(' · ');
         const invBadge = inInv
@@ -2739,7 +2595,7 @@ function renderCatalog() {
           : `<span style="color:var(--text3);font-size:12px;">Not in inventory</span>`;
         return `<div class="m-card">
           <div class="m-card-head">
-            <div class="m-swatch clickable" style="${hexBg(hex)}" title="Change swatch" data-key="${it.filamentKey}" onclick="openSwatchPicker(this.dataset.key)"></div>
+            <div class="m-swatch" style="background:${hex}"></div>
             <div class="m-card-info">
               <div class="m-card-name">${it.name}</div>
               <div class="m-card-meta">${meta}</div>
@@ -2768,7 +2624,7 @@ function renderCatalog() {
   }
 
   tb.innerHTML = items.map(it => {
-    const hex   = colorHex(it.color, it.colorSwatch);
+    const hex   = colorHex(it.color);
     const inInv = inventory[it.filamentKey];
     const invBadge = inInv
       ? `<span style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal-border);border-radius:5px;padding:2px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;">${inInv.count} spool${inInv.count !== 1 ? 's' : ''}</span>`
@@ -2780,7 +2636,7 @@ function renderCatalog() {
           ${starIcon(it.essential)}
         </button>
       </td>
-      <td><div class="swatch-cell"><div class="swatch clickable" style="${hexBg(hex)}" title="Change swatch" data-key="${it.filamentKey}" onclick="openSwatchPicker(this.dataset.key)"></div><span style="color:var(--text2)">${it.color}</span></div></td>
+      <td><div class="swatch-cell"><div class="swatch" style="background:${hex}"></div><span style="color:var(--text2)">${it.color}</span></div></td>
       <td style="color:var(--text2)">${it.brand}</td>
       <td><span class="mat-chip">${it.material}</span></td>
       <td>${it.filamentType ? `<span class="type-chip ${typeClass(it.filamentType)}">${it.filamentType}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
@@ -2904,7 +2760,6 @@ function openAddCatalog() {
   document.getElementById('ce-sub').textContent   = 'New filament entry';
   document.getElementById('ce-del-btn').style.display = 'none';
   ['ce-brand','ce-mat','ce-color','ce-name'].forEach(id => document.getElementById(id).value = '');
-  ceSwatchOverride = null; updateCeSwatchPreview();
   document.getElementById('ce-ftype').value = '';
   renderCeUpcList();
   document.getElementById('ov-catalog').classList.add('open');
@@ -2920,7 +2775,6 @@ function openEditCatalog(key) {
   document.getElementById('ce-brand').value  = it.brand || '';
   document.getElementById('ce-mat').value    = it.material || '';
   setSelectCI('ce-ftype', it.filamentType || '');
-  ceSwatchOverride = it.colorSwatch || null; updateCeSwatchPreview();
   document.getElementById('ce-color').value  = it.color || '';
   document.getElementById('ce-name').value   = it.name || '';
   renderCeUpcList();
@@ -2966,8 +2820,7 @@ function saveCatalogEntry() {
     catalog[catalogEditKey].upcs.forEach(upc => { if (upcIndex[upc] === catalogEditKey) delete upcIndex[upc]; });
   }
 
-  const swatchToSave = ceSwatchOverride || (catalog[catalogEditKey]?.colorSwatch && catalog[catalogEditKey].color === color ? catalog[catalogEditKey].colorSwatch : undefined);
-  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false, ...(swatchToSave ? {colorSwatch: swatchToSave} : {}) };
+  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false };
   catalog[newKey] = entry;
 
   // Rename inventory key if identity changed
@@ -3151,187 +3004,24 @@ function toast(msg) {
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ════════════════════════════════════════════════
-// COLOR PALETTE + SWATCH SYSTEM
-// ════════════════════════════════════════════════
-const COLOR_PALETTE_GROUPS = [
-  { label: 'Neutrals', colors: [
-    { name: 'Black',      hex: '#2A2D35', kw: ['black'] },
-    { name: 'Charcoal',   hex: '#4A4E5E', kw: ['charcoal'] },
-    { name: 'Dark Gray',  hex: '#6B717E', kw: ['dark gray','dark grey'] },
-    { name: 'Gray',       hex: '#9098AA', kw: ['gray','grey','ash'] },
-    { name: 'Silver',     hex: '#B0B6C2', kw: ['silver'] },
-    { name: 'White',      hex: '#F5F5F5', kw: ['white'] },
-    { name: 'Ivory',      hex: '#EDE8D5', kw: ['ivory','cream','beige'] },
-    { name: 'Natural',    hex: '#C8BC9A', kw: ['natural','nude'] },
-  ]},
-  { label: 'Reds', colors: [
-    { name: 'Dark Red',   hex: '#8B1A1A', kw: ['dark red','maroon','burgundy'] },
-    { name: 'Red',        hex: '#D94040', kw: ['red'] },
-    { name: 'Scarlet',    hex: '#C0392B', kw: ['scarlet'] },
-    { name: 'Coral',      hex: '#E8624A', kw: ['coral','salmon'] },
-  ]},
-  { label: 'Pinks', colors: [
-    { name: 'Magenta',    hex: '#C83288', kw: ['magenta'] },
-    { name: 'Hot Pink',   hex: '#E83278', kw: ['hot pink','fuchsia'] },
-    { name: 'Pink',       hex: '#D45F8A', kw: ['pink'] },
-    { name: 'Sakura',     hex: '#F4A0B5', kw: ['sakura','light pink'] },
-    { name: 'Rose',       hex: '#E8809A', kw: ['rose'] },
-  ]},
-  { label: 'Oranges & Yellows', colors: [
-    { name: 'Dark Orange',hex: '#C86020', kw: ['dark orange'] },
-    { name: 'Orange',     hex: '#E07830', kw: ['orange'] },
-    { name: 'Mandarin',   hex: '#E8682A', kw: ['mandarin','tangerine'] },
-    { name: 'Copper',     hex: '#B87050', kw: ['copper'] },
-    { name: 'Gold',       hex: '#C8A840', kw: ['gold','golden'] },
-    { name: 'Yellow',     hex: '#E8C327', kw: ['yellow'] },
-    { name: 'Lemon',      hex: '#D4C820', kw: ['lemon'] },
-  ]},
-  { label: 'Greens', colors: [
-    { name: 'Dark Green', hex: '#1E5C35', kw: ['dark green'] },
-    { name: 'Forest',     hex: '#2D6A4F', kw: ['forest','mistletoe'] },
-    { name: 'Green',      hex: '#2A8C50', kw: ['green'] },
-    { name: 'Jade',       hex: '#3A9E60', kw: ['jade'] },
-    { name: 'Bamboo',     hex: '#0E7C6B', kw: ['bamboo'] },
-    { name: 'Mint',       hex: '#7ED8A4', kw: ['mint'] },
-    { name: 'Lime',       hex: '#7AC840', kw: ['lime','bright green'] },
-    { name: 'Olive',      hex: '#6B8040', kw: ['olive'] },
-  ]},
-  { label: 'Blues', colors: [
-    { name: 'Navy',       hex: '#1E3A6E', kw: ['navy','dark blue'] },
-    { name: 'Blue',       hex: '#3B72D4', kw: ['blue'] },
-    { name: 'Marine',     hex: '#2050A0', kw: ['marine','ocean','cobalt'] },
-    { name: 'Teal',       hex: '#0E8080', kw: ['teal'] },
-    { name: 'Cyan',       hex: '#2AB0C0', kw: ['cyan','aqua'] },
-    { name: 'Sky Blue',   hex: '#5BA8D8', kw: ['sky'] },
-    { name: 'Baby Blue',  hex: '#90C0E8', kw: ['baby blue','light blue','powder'] },
-  ]},
-  { label: 'Purples', colors: [
-    { name: 'Dark Purple',hex: '#4A1E8B', kw: ['dark purple'] },
-    { name: 'Purple',     hex: '#7B4DC8', kw: ['purple'] },
-    { name: 'Violet',     hex: '#6040A8', kw: ['violet'] },
-    { name: 'Lavender',   hex: '#A888D8', kw: ['lavender','aurora'] },
-  ]},
-  { label: 'Browns', colors: [
-    { name: 'Dark Brown', hex: '#5A3020', kw: ['dark brown'] },
-    { name: 'Brown',      hex: '#8B5E3C', kw: ['brown','clay'] },
-    { name: 'Tan',        hex: '#C09060', kw: ['tan','camel','khaki'] },
-    { name: 'Birch',      hex: '#C8A878', kw: ['birch','wood','oak','walnut'] },
-  ]},
-  { label: 'Specials', colors: [
-    { name: 'Carbon',     hex: '#3A3E4A', kw: ['carbon','cf'] },
-    { name: 'Bronze',     hex: '#967040', kw: ['bronze'] },
-    { name: 'Translucent',hex: '#A0C8E0', kw: ['translucent','transparent','clear','lite','light jade'] },
-    { name: 'Glow Green', hex: '#80FF80', kw: ['glow green'] },
-    { name: 'Glow Blue',  hex: '#60D8FF', kw: ['glow blue'] },
-    { name: 'Rainbow',    hex: 'rainbow', kw: ['rainbow','multicolor','neon'] },
-  ]},
-];
-const COLOR_PALETTE = COLOR_PALETTE_GROUPS.flatMap(g => g.colors);
-
-// Returns white or dark text color for contrast against a swatch
-function contrastColor(hex) {
-  if (!hex || hex === 'rainbow' || !hex.startsWith('#')) return '#fff';
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.52 ? 'rgba(0,0,0,.72)' : '#fff';
-}
-
-// Returns hex/special for a color, using user override if set
-function colorHex(name, override) {
-  if (override) return override;
-  return autoSwatch(name);
-}
-
-// Auto-detect best palette color from name string
-function autoSwatch(name) {
-  if (!name) return '#E8EAEE';
-  const n = name.toLowerCase();
-  let best = null, bestScore = 0;
-  for (const c of COLOR_PALETTE) {
-    for (const kw of c.kw) {
-      if (n.includes(kw) && kw.length > bestScore) { bestScore = kw.length; best = c; }
-    }
-  }
-  if (best) return best.hex;
+function colorHex(name) {
+  if (!name) return '#E8EAEE'; const n = name.toLowerCase();
+  const m = {'black':'#2A2D35','white':'#F5F5F5','red':'#D94040','blue':'#3B72D4','green':'#2A8C50',
+    'yellow':'#E8C327','orange':'#E07830','purple':'#7B4DC8','pink':'#D45F8A','grey':'#9098AA',
+    'gray':'#9098AA','silver':'#B0B6C2','gold':'#C8A840','brown':'#8B5E3C','teal':'#0E8080',
+    'cyan':'#2AB0C0','magenta':'#C83288','bamboo':'#0E7C6B','jade':'#3A9E60','natural':'#C8BC9A',
+    'translucent':'#7AAEC8','transparent':'#7AAEC8','charcoal':'#4A4E5E','lemon':'#D4C820',
+    'sky':'#5BA8D8','navy':'#1E3A6E','maroon':'#8B2222','cf':'#3A3E4A','carbon':'#3A3E4A'};
+  for (const [k, v] of Object.entries(m)) { if (n.includes(k)) return v; }
   let h = 0; for (let i = 0; i < name.length; i++) h = ((h<<5)-h)+name.charCodeAt(i);
   return `hsl(${Math.abs(h) % 360},40%,55%)`;
-}
-
-// Convert hex/special to CSS background string
-function hexBg(hex) {
-  if (hex === 'rainbow') return 'background:linear-gradient(135deg,#f00 0%,#f80 20%,#ff0 38%,#0c0 55%,#0af 75%,#80f 100%)';
-  return `background:${hex}`;
-}
-
-// ════════════════════════════════════════════════
-// SWATCH PICKER
-// ════════════════════════════════════════════════
-let swatchPickKey = null, swatchPickHex = null;
-
-function openSwatchPicker(key) {
-  swatchPickKey = key;
-  const it = catalog[key];
-  if (!it) return;
-  swatchPickHex = it.colorSwatch || autoSwatch(it.color);
-  document.getElementById('sw-name').textContent = it.name;
-  renderSwatchGrid();
-  document.getElementById('ov-swatch').classList.add('open');
-}
-
-function renderSwatchGrid() {
-  document.getElementById('sw-grid').innerHTML = COLOR_PALETTE_GROUPS.map(g => `
-    <div class="sp-group-label">${g.label}</div>
-    <div class="sp-row">${g.colors.map(c => `
-      <div class="sp-dot ${swatchPickHex === c.hex ? 'active' : ''}"
-        style="${hexBg(c.hex)}" title="${c.name}"
-        onclick="selectSwatchColor('${c.hex}')"></div>`).join('')}
-    </div>`).join('');
-}
-
-function selectSwatchColor(hex) { swatchPickHex = hex; renderSwatchGrid(); }
-
-function saveSwatchPick() {
-  if (swatchPickKey === '__modal__') {
-    ceSwatchOverride = swatchPickHex;
-    updateCeSwatchPreview();
-    closeSwatchPicker();
-    return;
-  }
-  if (!swatchPickKey || !catalog[swatchPickKey]) return;
-  catalog[swatchPickKey].colorSwatch = swatchPickHex;
-  if (inventory[swatchPickKey]) inventory[swatchPickKey].colorSwatch = swatchPickHex;
-  closeSwatchPicker();
-  renderCatalog(); renderInv();
-  if (document.getElementById('view-lowstock').classList.contains('active')) renderLowStock();
-  sched(); toast('Swatch updated');
-}
-
-function closeSwatchPicker() {
-  document.getElementById('ov-swatch').classList.remove('open');
-  swatchPickKey = null; swatchPickHex = null;
-}
-
-function updateCeSwatchPreview() {
-  const color = document.getElementById('ce-color')?.value.trim() || '';
-  const hex = ceSwatchOverride || autoSwatch(color) || '#E8EAEE';
-  const el = document.getElementById('ce-swatch-prev');
-  if (el) el.style.cssText = `width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1px solid rgba(0,0,0,.12);cursor:pointer;transition:transform .12s;${hexBg(hex)}`;
-}
-
-function openSwatchPickerForModal() {
-  const color = document.getElementById('ce-color')?.value.trim() || '';
-  swatchPickKey = '__modal__';
-  swatchPickHex = ceSwatchOverride || autoSwatch(color) || '#E8EAEE';
-  document.getElementById('sw-name').textContent = color || 'Choose swatch';
-  renderSwatchGrid();
-  document.getElementById('ov-swatch').classList.add('open');
 }
 
 function openHelpModal()    { document.getElementById('ov-help').classList.add('open'); }
 function closeOverlay(id)  { document.getElementById(id).classList.remove('open'); }
 
 // Close modals on overlay click / Escape
-['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear','ov-swatch'].forEach(id => {
+['ov-edit','ov-catalog','ov-resolve','ov-orphan','ov-clear'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === e.currentTarget) {
       if (id === 'ov-edit')     closeEdit();
@@ -3339,12 +3029,11 @@ function closeOverlay(id)  { document.getElementById(id).classList.remove('open'
       if (id === 'ov-resolve')  closeResolve();
       if (id === 'ov-orphan')   closeOrphanModal();
       if (id === 'ov-clear')    closeClearModal();
-      if (id === 'ov-swatch')   closeSwatchPicker();
     }
   });
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); closeSwatchPicker(); }
+  if (e.key === 'Escape') { closeEdit(); closeCatalogModal(); closeResolve(); closeOrphanModal(); closeClearModal(); }
 });
 
 bootstrapAuth();
