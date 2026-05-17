@@ -391,6 +391,16 @@
   body:not(.is-mobile) .m-card-list{display:none;}
   body:not(.is-mobile) .m-sort-bar{display:none!important;}
   body:not(.is-mobile) .bottom-nav{display:none!important;}
+
+  /* ── COLOR GRID ─────────────────────────────────────────────────────────── */
+  .color-grid{display:flex;flex-wrap:wrap;gap:10px;padding:0 0 16px;}
+  .cg-tile{width:90px;height:90px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,box-shadow .12s;box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative;}
+  .cg-tile:hover{transform:scale(1.06);box-shadow:0 4px 16px rgba(0,0,0,.22);}
+  .cg-tile.zero{opacity:0.45;}
+  .cg-count{font-size:26px;font-weight:700;line-height:1;}
+  .cg-label{font-size:9px;font-weight:600;text-align:center;padding:2px 6px 0;opacity:.88;line-height:1.2;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cg-section-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;width:100%;}
+  .cg-section-count{font-weight:400;margin-left:6px;opacity:.7;}
 </style>
 </head>
 <body>
@@ -435,6 +445,10 @@
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         Low Stock
         <span class="nav-badge red" id="ls-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-btn" onclick="showView('colorgrid',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Color Grid
       </button>
       <button class="nav-btn" onclick="showView('orphans',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -575,6 +589,14 @@
           <button class="m-sort-btn" id="msort-ls-material" onclick="mobileSort('ls','material')">Material</button>
         </div>
         <div class="m-card-list" id="ls-cards"></div>
+      </div>
+
+      <!-- ════════ COLOR GRID ════════ -->
+      <div class="view" id="view-colorgrid">
+        <div class="page-head">
+          <div><div class="page-title">Color Grid</div><div class="page-sub" id="cg-sub">—</div></div>
+        </div>
+        <div id="cg-grid" style="padding:0 4px"></div>
       </div>
 
       <!-- ════════ CATALOG ════════ -->
@@ -1251,6 +1273,87 @@ let unmatched = [];
 let saveTimer = null;
 
 // ──────────────────────────────────────────────
+// Color palette + swatch helpers
+// ──────────────────────────────────────────────
+const COLOR_PALETTE_GROUPS = [
+  { label: 'Neutrals', colors: [
+    { name: 'Black',    hex: '#2A2D35', kw: ['black'] },
+    { name: 'Charcoal', hex: '#4A4E5E', kw: ['charcoal','ash grey','dark grey','ash'] },
+    { name: 'White',    hex: '#F5F5F5', kw: ['white'] },
+    { name: 'Ivory',    hex: '#EDE8D5', kw: ['ivory','cream','beige','bone'] },
+    { name: 'Grey',     hex: '#9CA3AF', kw: ['grey','gray','silver'] },
+    { name: 'Brown',    hex: '#7C5C3E', kw: ['brown','clay','coffee','mocha','dark brown','clay brown'] },
+  ]},
+  { label: 'Reds', colors: [
+    { name: 'Red',      hex: '#E53935', kw: ['red'] },
+    { name: 'Scarlet',  hex: '#C62828', kw: ['scarlet','crimson','dark red'] },
+    { name: 'Pink',     hex: '#F48FB1', kw: ['pink','rose','blush'] },
+    { name: 'Magenta',  hex: '#AD1457', kw: ['magenta','fuchsia'] },
+  ]},
+  { label: 'Oranges & Yellows', colors: [
+    { name: 'Orange',   hex: '#FB8C00', kw: ['orange'] },
+    { name: 'Yellow',   hex: '#FDD835', kw: ['yellow','lemon','lemon yellow'] },
+    { name: 'Gold',     hex: '#F9A825', kw: ['gold','amber'] },
+  ]},
+  { label: 'Greens', colors: [
+    { name: 'Green',    hex: '#43A047', kw: ['green'] },
+    { name: 'Dark Green',hex:'#2E7D32', kw: ['dark green','forest green','bottle green'] },
+    { name: 'Lime',     hex: '#C6E03B', kw: ['lime','bright green','neon green'] },
+    { name: 'Olive',    hex: '#827717', kw: ['olive'] },
+    { name: 'Mint',     hex: '#80CBC4', kw: ['mint','jade','lite jade','mistletoe'] },
+    { name: 'Teal',     hex: '#00897B', kw: ['teal','cyan'] },
+  ]},
+  { label: 'Blues', colors: [
+    { name: 'Blue',     hex: '#1E88E5', kw: ['blue'] },
+    { name: 'Navy',     hex: '#1A237E', kw: ['navy','marine','marine blue','midnight'] },
+    { name: 'Sky',      hex: '#81D4FA', kw: ['sky','light blue','baby blue'] },
+    { name: 'Bambu Green', hex: '#00AE42', kw: ['bambu green'] },
+  ]},
+  { label: 'Purples', colors: [
+    { name: 'Purple',   hex: '#8E24AA', kw: ['purple'] },
+    { name: 'Violet',   hex: '#5E35B1', kw: ['violet','indigo'] },
+    { name: 'Lavender', hex: '#CE93D8', kw: ['lavender','lilac'] },
+    { name: 'Aurora',   hex: '#B39DDB', kw: ['aurora','aurora purple'] },
+  ]},
+  { label: 'Translucents', colors: [
+    { name: 'Translucent', hex: '#A5D8E6', kw: ['translucent','transparent','clear'] },
+  ]},
+  { label: 'Wood / Natural', colors: [
+    { name: 'Wood',     hex: '#A0785A', kw: ['wood','birch','oak','walnut','white oak','classic birch'] },
+  ]},
+  { label: 'Specials', colors: [
+    { name: 'Rainbow',  hex: 'rainbow', kw: ['rainbow','multicolor','neon city','neon','aurora','dawn radiance'] },
+    { name: 'Silk',     hex: '#C0C8D8', kw: ['silk'] },
+    { name: 'Glow',     hex: '#B8F5A0', kw: ['glow'] },
+  ]},
+];
+const COLOR_PALETTE = COLOR_PALETTE_GROUPS.flatMap(g => g.colors);
+
+function autoSwatch(name) {
+  if (!name) return '#E8EAEE';
+  const n = name.toLowerCase();
+  let best = null, bestScore = 0;
+  for (const c of COLOR_PALETTE) {
+    for (const kw of c.kw) {
+      if (n.includes(kw) && kw.length > bestScore) { bestScore = kw.length; best = c; }
+    }
+  }
+  if (best) return best.hex;
+  let h = 0; for (let i = 0; i < name.length; i++) h = ((h<<5)-h)+name.charCodeAt(i);
+  return `hsl(${Math.abs(h)%360},45%,52%)`;
+}
+function colorHex(name, override) { return override || autoSwatch(name); }
+function hexBg(hex) {
+  if (hex === 'rainbow') return 'background:linear-gradient(135deg,#f00 0%,#f80 20%,#ff0 38%,#0c0 55%,#0af 75%,#80f 100%)';
+  return `background:${hex}`;
+}
+function contrastColor(hex) {
+  if (!hex || hex === 'rainbow' || !hex.startsWith('#')) return '#fff';
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return (0.299*r+0.587*g+0.114*b)/255 > 0.52 ? 'rgba(0,0,0,.72)' : '#fff';
+}
+
+// ──────────────────────────────────────────────
 // Platform API — Electron IPC when available,
 // otherwise a browser fallback using localStorage
 // and the HTML file input.
@@ -1897,6 +2000,7 @@ function showView(n, el) {
   if (n === 'orphans')   renderOrphans();
   if (n === 'unmatched') renderUnmatched();
   if (n === 'lowstock')  renderLowStock();
+  if (n === 'colorgrid') renderColorGrid();
   closeSidebarOnMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2625,6 +2729,48 @@ function renderLowStock() {
 }
 
 // ════════════════════════════════════════════════
+// RENDER COLOR GRID
+// ════════════════════════════════════════════════
+function renderColorGrid() {
+  const allItems = Object.values(catalog).map(cat => {
+    const inv = inventory[cat.filamentKey] || {};
+    return { ...cat, count: inv.count || 0 };
+  });
+  const total = allItems.reduce((s,i) => s+i.count, 0);
+  document.getElementById('cg-sub').textContent = `${allItems.length} filaments · ${total} total spools`;
+  const groupMap = {};
+  allItems.forEach(it => {
+    const t = it.filamentType || 'Other';
+    if (!groupMap[t]) groupMap[t] = [];
+    groupMap[t].push(it);
+  });
+  const TYPE_ORDER = ['Basic','Matte','Silk +','Silk','PETG HF','PETG','WOOD','TRANSLUCENT','GLOW'];
+  const groups = Object.entries(groupMap).sort(([a],[b]) => {
+    const ai = TYPE_ORDER.indexOf(a), bi = TYPE_ORDER.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b);
+  });
+  groups.forEach(([,items]) => items.sort((a,b) => b.count - a.count || a.color.localeCompare(b.color)));
+  document.getElementById('cg-grid').innerHTML = groups.map(([type, items]) => {
+    const tiles = items.map(it => {
+      const hex = colorHex(it.color, it.colorSwatch);
+      const fg = contrastColor(hex);
+      const cls = it.count === 0 ? ' zero' : '';
+      return `<div class="cg-tile${cls}" style="${hexBg(hex)};color:${fg}"
+        title="${it.name}" onclick="openEditCatalog('${it.filamentKey}')">
+        <div class="cg-count">${it.count}</div>
+        <div class="cg-label">${it.color}</div>
+      </div>`;
+    }).join('');
+    const groupTotal = items.reduce((s,i)=>s+i.count,0);
+    return `<div class="cg-section-label">${type}<span class="cg-section-count">${groupTotal} spools</span></div>
+      <div class="color-grid">${tiles}</div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
 // RENDER CATALOG
 // ════════════════════════════════════════════════
 function renderCatalog() {
@@ -3101,18 +3247,7 @@ function toast(msg) {
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function colorHex(name) {
-  if (!name) return '#E8EAEE'; const n = name.toLowerCase();
-  const m = {'black':'#2A2D35','white':'#F5F5F5','red':'#D94040','blue':'#3B72D4','green':'#2A8C50',
-    'yellow':'#E8C327','orange':'#E07830','purple':'#7B4DC8','pink':'#D45F8A','grey':'#9098AA',
-    'gray':'#9098AA','silver':'#B0B6C2','gold':'#C8A840','brown':'#8B5E3C','teal':'#0E8080',
-    'cyan':'#2AB0C0','magenta':'#C83288','bamboo':'#0E7C6B','jade':'#3A9E60','natural':'#C8BC9A',
-    'translucent':'#7AAEC8','transparent':'#7AAEC8','charcoal':'#4A4E5E','lemon':'#D4C820',
-    'sky':'#5BA8D8','navy':'#1E3A6E','maroon':'#8B2222','cf':'#3A3E4A','carbon':'#3A3E4A'};
-  for (const [k, v] of Object.entries(m)) { if (n.includes(k)) return v; }
-  let h = 0; for (let i = 0; i < name.length; i++) h = ((h<<5)-h)+name.charCodeAt(i);
-  return `hsl(${Math.abs(h) % 360},40%,55%)`;
-}
+// colorHex(name, override) is defined earlier alongside COLOR_PALETTE_GROUPS
 
 function openHelpModal()    { document.getElementById('ov-help').classList.add('open'); }
 function closeOverlay(id)  { document.getElementById(id).classList.remove('open'); }
