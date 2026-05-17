@@ -2739,12 +2739,14 @@ function renderColorGrid() {
   const total = allItems.reduce((s,i) => s+i.count, 0);
   document.getElementById('cg-sub').textContent = `${allItems.length} filaments · ${total} total spools`;
   const groupMap = {};
+  const TYPE_ORDER = ['Matte','Basic','Silk +','Silk','PETG HF','PETG','Wood','Translucent','Glow'];
   allItems.forEach(it => {
-    const t = it.filamentType || 'Other';
-    if (!groupMap[t]) groupMap[t] = [];
-    groupMap[t].push(it);
+    const raw = it.filamentType || 'Other';
+    // Use canonical name from TYPE_ORDER (case-insensitive match), else raw value
+    const canonical = TYPE_ORDER.find(t => t.toLowerCase() === raw.toLowerCase()) || raw;
+    if (!groupMap[canonical]) groupMap[canonical] = [];
+    groupMap[canonical].push(it);
   });
-  const TYPE_ORDER = ['Matte','Basic','Silk +','Silk','PETG HF','PETG','WOOD','TRANSLUCENT','GLOW'];
   const groups = Object.entries(groupMap).sort(([a],[b]) => {
     const ai = TYPE_ORDER.findIndex(t => t.toLowerCase() === a.toLowerCase());
     const bi = TYPE_ORDER.findIndex(t => t.toLowerCase() === b.toLowerCase());
