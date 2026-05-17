@@ -1297,9 +1297,29 @@ const webAPI = {
 // ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://ufuowcssuyleibpxtskp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_scz2vP1TTlTeFJ2Dy_8VPw_yBKbSJBs';
+// Safari ITP clears localStorage for sites in OAuth redirect chains, which
+// kills the PKCE code verifier before the code exchange can happen.
+// Fix: route the PKCE verifier through sessionStorage (survives same-tab
+// navigation, not targeted by ITP) while keeping the session itself in
+// localStorage so it persists across browser restarts.
+const _itpSafeStorage = {
+  getItem:    k => (k.includes('pkce') || k.includes('code-verifier'))
+                     ? (sessionStorage.getItem(k) ?? localStorage.getItem(k))
+                     : localStorage.getItem(k),
+  setItem:    (k, v) => {
+    if (k.includes('pkce') || k.includes('code-verifier')) {
+      try { sessionStorage.setItem(k, v); } catch(e) {}
+    }
+    try { localStorage.setItem(k, v); } catch(e) {}
+  },
+  removeItem: k => { try { sessionStorage.removeItem(k); } catch(e) {}
+                     try { localStorage.removeItem(k); } catch(e) {} },
+};
+
 const sb = (window.supabase && !window.electronAPI)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce',
+              storage: _itpSafeStorage }
     })
   : null;
 
