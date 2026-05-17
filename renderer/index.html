@@ -1102,7 +1102,15 @@
           </optgroup>
         </select>
       </div>
-      <div><label class="f-label">Color *</label><input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0"></div>
+      <div>
+        <label class="f-label">Color *</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="f-input" id="ce-color" placeholder="Jade White" style="margin:0;flex:1" oninput="updateCeSwatchPreview()">
+          <div id="ce-swatch-prev" onclick="openCeSwatchPicker()" title="Click to pick a custom color"
+               style="width:36px;height:36px;flex-shrink:0;border-radius:8px;border:1px solid rgba(0,0,0,.15);cursor:pointer;background:#E8EAEE;transition:transform .12s"
+               onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''"></div>
+        </div>
+      </div>
     </div>
     <div style="margin-top:12px;">
       <label class="f-label">Name / SKU (auto-generated if blank)</label>
@@ -1112,6 +1120,19 @@
       <button class="btn btn-g btn-sm" onclick="closeCatalogModal()">Cancel</button>
       <button class="btn btn-d btn-sm" id="ce-del-btn" onclick="deleteCatalogEntry()" style="display:none">Delete</button>
       <button class="btn btn-p btn-sm" onclick="saveCatalogEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Swatch Picker ══ -->
+<div class="overlay" id="ov-swatch">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Pick a Color Swatch</div>
+    <div class="modal-sub" id="sw-sub">Override the auto-detected color</div>
+    <div id="sw-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;max-height:320px;overflow-y:auto"></div>
+    <div class="modal-foot">
+      <button class="btn btn-g btn-sm" onclick="closeCeSwatchPicker()">Cancel</button>
+      <button class="btn btn-d btn-sm" onclick="clearCeSwatch()">Reset to Auto</button>
     </div>
   </div>
 </div>
@@ -1696,6 +1717,7 @@ function closeSidebarOnMobile() {
 let editKey        = null;
 let editUpcList    = [];   // working copy of upcs during edit
 let catalogEditKey = null;
+let ceSwatchOverride = null; // manual swatch override for the catalog edit modal
 let ceUpcList      = [];   // working copy of upcs during catalog edit
 let resolveUpc     = null;
 let orphanUpc      = null;
@@ -3002,16 +3024,60 @@ function delEntry() {
 }
 
 // ════════════════════════════════════════════════
+// ── Catalog swatch preview ──
+function updateCeSwatchPreview() {
+  const color = document.getElementById('ce-color')?.value.trim() || '';
+  const hex = ceSwatchOverride || autoSwatch(color) || '#E8EAEE';
+  const el = document.getElementById('ce-swatch-prev');
+  if (!el) return;
+  el.style.cssText = `width:36px;height:36px;flex-shrink:0;border-radius:8px;border:2px solid ${ceSwatchOverride ? 'var(--teal-mid)' : 'rgba(0,0,0,.15)'};cursor:pointer;transition:transform .12s;${hexBg(hex)}`;
+  el.onmouseover = () => el.style.transform = 'scale(1.1)';
+  el.onmouseout  = () => el.style.transform = '';
+}
+
+function openCeSwatchPicker() {
+  const color = document.getElementById('ce-color')?.value.trim() || '';
+  document.getElementById('sw-sub').textContent = color ? `Auto: ${autoSwatch(color)}` : 'Choose a swatch';
+  const grid = document.getElementById('sw-grid');
+  grid.innerHTML = COLOR_PALETTE_GROUPS.map(g => `
+    <div style="width:100%;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-top:4px">${g.label}</div>
+    ${g.colors.map(c => {
+      const sel = ceSwatchOverride === c.hex ? 'outline:3px solid var(--teal-mid);outline-offset:2px;' : '';
+      return `<div onclick="selectCeSwatch('${c.hex}')" title="${c.name}"
+        style="width:40px;height:40px;border-radius:8px;cursor:pointer;${hexBg(c.hex)};${sel}box-shadow:0 1px 3px rgba(0,0,0,.2);flex-shrink:0;transition:transform .1s"
+        onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform=''"></div>`;
+    }).join('')}
+  `).join('');
+  document.getElementById('ov-swatch').classList.add('open');
+}
+
+function selectCeSwatch(hex) {
+  ceSwatchOverride = hex;
+  updateCeSwatchPreview();
+  closeCeSwatchPicker();
+}
+
+function clearCeSwatch() {
+  ceSwatchOverride = null;
+  updateCeSwatchPreview();
+  closeCeSwatchPicker();
+}
+
+function closeCeSwatchPicker() {
+  document.getElementById('ov-swatch').classList.remove('open');
+}
+
 // MODAL: ADD / EDIT CATALOG
 // ════════════════════════════════════════════════
 function openAddCatalog() {
-  catalogEditKey = null; ceUpcList = [];
+  catalogEditKey = null; ceUpcList = []; ceSwatchOverride = null;
   document.getElementById('ce-title').textContent = 'Add Catalog Entry';
   document.getElementById('ce-sub').textContent   = 'New filament entry';
   document.getElementById('ce-del-btn').style.display = 'none';
   ['ce-brand','ce-mat','ce-color','ce-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ce-ftype').value = '';
   renderCeUpcList();
+  updateCeSwatchPreview();
   document.getElementById('ov-catalog').classList.add('open');
 }
 
@@ -3027,7 +3093,9 @@ function openEditCatalog(key) {
   setSelectCI('ce-ftype', it.filamentType || '');
   document.getElementById('ce-color').value  = it.color || '';
   document.getElementById('ce-name').value   = it.name || '';
+  ceSwatchOverride = it.colorSwatch || null;
   renderCeUpcList();
+  updateCeSwatchPreview();
   document.getElementById('ov-catalog').classList.add('open');
 }
 
@@ -3051,7 +3119,7 @@ function addCatalogUpc() {
 
 function removeCeUpc(i) { ceUpcList.splice(i, 1); renderCeUpcList(); }
 
-function closeCatalogModal() { document.getElementById('ov-catalog').classList.remove('open'); catalogEditKey = null; }
+function closeCatalogModal() { document.getElementById('ov-catalog').classList.remove('open'); catalogEditKey = null; ceSwatchOverride = null; }
 
 function saveCatalogEntry() {
   const brand        = document.getElementById('ce-brand').value.trim();
@@ -3070,7 +3138,7 @@ function saveCatalogEntry() {
     catalog[catalogEditKey].upcs.forEach(upc => { if (upcIndex[upc] === catalogEditKey) delete upcIndex[upc]; });
   }
 
-  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false };
+  const entry = { filamentKey: newKey, brand, material, filamentType, color, name, upcs: ceUpcList, essential: catalog[catalogEditKey]?.essential || false, ...(ceSwatchOverride ? { colorSwatch: ceSwatchOverride } : {}) };
   catalog[newKey] = entry;
 
   // Rename inventory key if identity changed
