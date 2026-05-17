@@ -2744,9 +2744,10 @@ function renderColorGrid() {
     if (!groupMap[t]) groupMap[t] = [];
     groupMap[t].push(it);
   });
-  const TYPE_ORDER = ['Basic','Matte','Silk +','Silk','PETG HF','PETG','WOOD','TRANSLUCENT','GLOW'];
+  const TYPE_ORDER = ['Matte','Basic','Silk +','Silk','PETG HF','PETG','WOOD','TRANSLUCENT','GLOW'];
   const groups = Object.entries(groupMap).sort(([a],[b]) => {
-    const ai = TYPE_ORDER.indexOf(a), bi = TYPE_ORDER.indexOf(b);
+    const ai = TYPE_ORDER.findIndex(t => t.toLowerCase() === a.toLowerCase());
+    const bi = TYPE_ORDER.findIndex(t => t.toLowerCase() === b.toLowerCase());
     if (ai !== -1 && bi !== -1) return ai - bi;
     if (ai !== -1) return -1;
     if (bi !== -1) return 1;
